@@ -37,13 +37,13 @@ export const Answer = ({
     const [isRefAccordionOpen, { toggle: toggleIsRefAccordionOpen }] = useBoolean(false);
     const filePathTruncationLimit = 50;
 
-    const parsedAnswer = useMemo(() => parseAnswer(answer), [answer]);
+    const appStateContext = useContext(AppStateContext)
+    const parsedAnswer = useMemo(() => parseAnswer(answer, appStateContext?.state.frontendSettings?.citation_links), [answer]);
     const [chevronIsExpanded, setChevronIsExpanded] = useState(isRefAccordionOpen);
     const [feedbackState, setFeedbackState] = useState(initializeAnswerFeedback(answer));
     const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
     const [showReportInappropriateFeedback, setShowReportInappropriateFeedback] = useState(false);
     const [negativeFeedbackList, setNegativeFeedbackList] = useState<Feedback[]>([]);
-    const appStateContext = useContext(AppStateContext)
     const FEEDBACK_ENABLED = appStateContext?.state.frontendSettings?.feedback_enabled && appStateContext?.state.isCosmosDBAvailable?.cosmosDB; 
     const SANITIZE_ANSWER = appStateContext?.state.frontendSettings?.sanitize_answer 
     

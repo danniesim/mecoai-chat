@@ -21,7 +21,8 @@ const enumerateCitations = (citations: Citation[]) => {
     return citations;
 }
 
-export function parseAnswer(answer: AskResponse): ParsedAnswer {
+export function parseAnswer(answer: AskResponse, withCitations: boolean | undefined): ParsedAnswer {
+
     let answerText = answer.answer;
     const citationLinks = answerText.match(/\[(doc\d\d?\d?)]/g);
 
@@ -34,14 +35,20 @@ export function parseAnswer(answer: AskResponse): ParsedAnswer {
         let citationIndex = link.slice(lengthDocN, link.length - 1);
         let citation = cloneDeep(answer.citations[Number(citationIndex) - 1]) as Citation;
         if (!filteredCitations.find((c) => c.id === citationIndex) && citation) {
-          answerText = answerText.replaceAll(link, ` ^${++citationReindex}^ `);
-          citation.id = citationIndex; // original doc index to de-dupe
-          citation.reindex_id = citationReindex.toString(); // reindex from 1 for display
-          filteredCitations.push(citation);
+          if (withCitations) {
+            answerText = answerText.replaceAll(link, ` ^${++citationReindex}^ `);
+            citation.id = citationIndex; // original doc index to de-dupe
+            citation.reindex_id = citationReindex.toString(); // reindex from 1 for display
+            filteredCitations.push(citation);
+          } else {
+            answerText = answerText.replaceAll(link, ``);
+          }
         }
     })
 
-    filteredCitations = enumerateCitations(filteredCitations);
+    if (withCitations) {
+      filteredCitations = enumerateCitations(filteredCitations);
+    }
 
     return {
         citations: filteredCitations,

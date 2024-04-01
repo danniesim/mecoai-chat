@@ -116,6 +116,7 @@ export type FrontendSettings = {
     feedback_enabled?: string | null;
     ui?: UI;
     sanitize_answer?: boolean;
+    citation_links?: boolean;
 }
 
 export enum Feedback {

@@ -26,6 +26,8 @@
     overflow-y: auto;
     max-height: calc(100vh - 100px);
     min-height: calc(100vh - 100px);
+    scrollbar-color: #404040 #000000 !important;
+    scrollbar-width: thin !important;
 }
 
 .chatEmptyState {

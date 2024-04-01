@@ -13,8 +13,8 @@
 textarea {
     background: #000000FF !important;
     color: bisque !important;
-        scrollbar-color: #404040 #000000 !important;
-            scrollbar-width: thin !important;
+    scrollbar-color: #404040 #000000 !important;
+    scrollbar-width: thin !important;
 }
 
 .questionInputTextArea {

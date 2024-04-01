@@ -279,6 +279,9 @@ frontend_settings = {
         "show_share_button": UI_SHOW_SHARE_BUTTON,
     },
     "sanitize_answer": SANITIZE_ANSWER,
+    "citation_links": os.environ.get(
+        "CITATION_LINKS",
+        "false").lower() == "true",
 }
 
 
