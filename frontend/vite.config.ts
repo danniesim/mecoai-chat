@@ -11,8 +11,24 @@ export default defineConfig({
     },
     server: {
         proxy: {
-            "/ask": "http://localhost:5000",
-            "/chat": "http://localhost:5000"
+            '/conversation': {
+                target: 'http://127.0.0.1:50505',
+                changeOrigin: true,
+                secure: false,      
+                ws: true,
+            },
+            '/history': {
+                target: 'http://127.0.0.1:50505',
+                changeOrigin: true,
+                secure: false,      
+                ws: true,
+            },
+            '/frontend_settings': {
+                target: 'http://127.0.0.1:50505',
+                changeOrigin: true,
+                secure: false,      
+                ws: true,
+            }
         }
     }
 });

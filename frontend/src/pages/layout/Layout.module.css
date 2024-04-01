@@ -5,7 +5,7 @@
 }
 
 .header {
-    background-color: #f2f2f2;
+    background-color: #0c0233;
 }
 
 .headerContainer {
@@ -28,7 +28,7 @@
     line-height: 28px;
     display: flex;
     align-items: flex-end;
-    color: #242424;
+    color: #e0e0e0;
 }
 
 .headerIcon {
@@ -45,7 +45,7 @@
 }
 
 .shareButton {
-    color: #FFFFFF;
+    color: #141414;
 }
 
 .shareButtonText {
@@ -55,7 +55,6 @@
     line-height: 20px;
     display: flex;
     align-items: center;
-    color: #FFFFFF;
 }
 
 .urlTextBox {
@@ -63,8 +62,7 @@
     font-weight: 400;
     font-size: 14px;
     line-height: 20px;
-    color: #707070;
-    border: 1px solid #D1D1D1;
+    border: 1px solid;
     border-radius: 4px;
 }
 
@@ -76,19 +74,17 @@
     align-items: center;
     padding: 5px 12px;
     gap: 4px;
-    background: #FFFFFF;
-    border: 1px solid #D1D1D1;
+    border: 1px solid;
     border-radius: 4px;
 }
 
 .copyButtonContainer:hover {
     cursor: pointer;
-    background: #D1D1D1;
 }
 
-.copyButton {
+/* .copyButton {
     color: #424242;
-}
+} */
 
 .copyButtonText {
     font-style: normal;
@@ -97,7 +93,6 @@
     line-height: 20px;
     display: flex;
     align-items: center;
-    color: #242424;
 }
 
 @media (max-width: 480px) {
