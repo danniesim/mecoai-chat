@@ -1,5 +1,8 @@
-import { CommandBarButton, ContextualMenu, DefaultButton, Dialog, DialogFooter, DialogType, ICommandBarStyles, IContextualMenuItem, IStackStyles, PrimaryButton, Spinner, SpinnerSize, Stack, StackItem, Text } from "@fluentui/react";
+import { ContextualMenu, Dialog, DialogFooter, DialogType, IContextualMenuItem, IStackStyles, Spinner, SpinnerSize } from "@fluentui/react";
 import { useBoolean } from '@fluentui/react-hooks';
+import { Title3, Button, Text } from "@fluentui/react-components";
+import { Broom24Regular as BroomIcon } from "@fluentui/react-icons";
+import { ChromeCloseIcon as CloseIcon } from "@fluentui/react-icons-mdl2";
 
 import styles from "./ChatHistoryPanel.module.css"
 import { useContext } from "react";
@@ -8,6 +11,7 @@ import React from "react";
 import ChatHistoryList from "./ChatHistoryList";
 import { ChatHistoryLoadingState, historyDeleteAll } from "../../api";
 
+
 interface ChatHistoryPanelProps {
 
 }
@@ -15,15 +19,6 @@ interface ChatHistoryPanelProps {
 export enum ChatHistoryPanelTabs {
     History = "History"
 }
-
-const commandBarStyle: ICommandBarStyles = {
-    root: {
-        padding: '0',
-        display: 'flex',
-        justifyContent: 'center',
-        backgroundColor: 'transparent'
-    },
-};
 
 const commandBarButtonStyle: Partial<IStackStyles> = { root: { height: '50px' } };
 
@@ -45,7 +40,7 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
         titleAriaId: 'labelId',
         subtitleAriaId: 'subTextId',
         isBlocking: true,
-        styles: { main: { maxWidth: 450 } },
+        styles: { main: { maxWidth: 450 } }
     }
 
     const menuItems: IContextualMenuItem[] = [
@@ -85,20 +80,22 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
     React.useEffect(() => {}, [appStateContext?.state.chatHistory, clearingError]);
 
     return (
-        <section className={styles.container} data-is-scrollable aria-label={"chat history panel"}>
-            <Stack horizontal horizontalAlign='space-between' verticalAlign='center' wrap aria-label="chat history header">
-                <StackItem>
-                    <Text role="heading" aria-level={2} style={{ alignSelf: "center", fontWeight: "600", fontSize: "18px", marginRight: "auto", paddingLeft: "20px" }}>Chat history</Text>
-                </StackItem>
-                <Stack verticalAlign="start">
-                    <Stack horizontal styles={commandBarButtonStyle}>
-                        <CommandBarButton
-                            iconProps={{ iconName: 'More' }}
+        <div style={{width: "268px", margin: "8px"}}data-is-scrollable aria-label={"chat history panel"}>
+            <div style={{
+              display: "flex",
+              alignContent: "space-between",
+              justifyContent: "center",
+              flexGrow: "12",
+              gap: "4px"
+            }} aria-label="chat history header">
+                <Title3 style={{flexGrow: "3"}}>Chat history</Title3>
+                <div style={{display: "flex", justifyContent: "start"}}>
+                    <div style={{display: "flex", flexDirection: "row", gap: "4px"}}>
+                        <Button
+                            icon={<BroomIcon  />}
                             title={"Clear all chat history"}
                             onClick={onShowContextualMenu}
                             aria-label={"clear all chat history"}
-                            styles={commandBarStyle}
-                            role="button"
                             id="moreButton"
                         />
                         <ContextualMenu
@@ -108,27 +105,16 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
                             onItemClick={toggleClearAllDialog}
                             onDismiss={onHideContextualMenu}
                         />
-                        <CommandBarButton
-                            iconProps={{ iconName: 'Cancel' }}
+                        <Button
+                            icon={<CloseIcon style={{width: "16px", height: "16px"}}/>}
                             title={"Hide"}
                             onClick={handleHistoryClick}
                             aria-label={"hide button"}
-                            styles={commandBarStyle}
-                            role="button"
                         />
-                    </Stack>
-                </Stack>
-            </Stack>
-            <Stack aria-label="chat history panel content"
-                styles={{
-                    root: {
-                        display: "flex",
-                        flexGrow: 1,
-                        flexDirection: "column",
-                        paddingTop: '2.5px',
-                        maxWidth: "100%"
-                    },
-                }}
+                    </div>
+                </div>
+            </div>
+            <div aria-label="chat history panel content"
                 style={{
                     display: "flex",
                     flexGrow: 1,
@@ -136,42 +122,43 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
                     flexWrap: "wrap",
                     padding: "1px"
                 }}>
-                <Stack className={styles.chatHistoryListContainer}>
+                <div className={styles.chatHistoryListContainer}>
                     {(appStateContext?.state.chatHistoryLoadingState === ChatHistoryLoadingState.Success && appStateContext?.state.isCosmosDBAvailable.cosmosDB) && <ChatHistoryList/>}
                     {(appStateContext?.state.chatHistoryLoadingState === ChatHistoryLoadingState.Fail && appStateContext?.state.isCosmosDBAvailable) && <>
-                        <Stack>
-                            <Stack horizontalAlign='center' verticalAlign='center' style={{ width: "100%", marginTop: 10 }}>
-                                <StackItem>
-                                    <Text style={{ alignSelf: 'center', fontWeight: '400', fontSize: 16 }}>
-                                        {appStateContext?.state.isCosmosDBAvailable?.status && <span>{appStateContext?.state.isCosmosDBAvailable?.status}</span>}
-                                        {!appStateContext?.state.isCosmosDBAvailable?.status && <span>Error loading chat history</span>}
-                                        
-                                    </Text>
-                                </StackItem>
-                                <StackItem>
-                                    <Text style={{ alignSelf: 'center', fontWeight: '400', fontSize: 14 }}>
-                                        <span>Chat history can't be saved at this time</span>
-                                    </Text>
-                                </StackItem>
-                            </Stack>
-                        </Stack>
+                        <div>
+                            <div style={{
+                              display: "flex",
+                              alignContent: "center",
+                              justifyContent: "center",
+                              gap: "4px",
+                              width: "100%", marginTop: 10 
+                            }}>
+                              <Text style={{ alignSelf: 'center', fontWeight: '400', fontSize: 16 }}>
+                                  {appStateContext?.state.isCosmosDBAvailable?.status && <span>{appStateContext?.state.isCosmosDBAvailable?.status}</span>}
+                                  {!appStateContext?.state.isCosmosDBAvailable?.status && <span>Error loading chat history</span>}
+                                  
+                              </Text>
+                              <Text style={{ alignSelf: 'center', fontWeight: '400', fontSize: 14 }}>
+                                  <span>Chat history can't be saved at this time</span>
+                              </Text>
+                            </div>
+                        </div>
                     </>}
                     {appStateContext?.state.chatHistoryLoadingState === ChatHistoryLoadingState.Loading && <>
-                        <Stack>
-                            <Stack horizontal horizontalAlign='center' verticalAlign='center' style={{ width: "100%", marginTop: 10 }}>
-                                <StackItem style={{ justifyContent: 'center', alignItems: 'center' }}>
-                                    <Spinner style={{ alignSelf: "flex-start", height: "100%", marginRight: "5px" }} size={SpinnerSize.medium} />
-                                </StackItem>
-                                <StackItem>
-                                    <Text style={{ alignSelf: 'center', fontWeight: '400', fontSize: 14 }}>
-                                        <span style={{ whiteSpace: 'pre-wrap' }}>Loading chat history</span>
-                                    </Text>
-                                </StackItem>
-                            </Stack>
-                        </Stack>
+                        <div>
+                            <div style={{ width: "100%",
+                              alignContent: "center",
+                              justifyContent: "center",
+                              marginTop: 10 }}>
+                                <Spinner style={{ alignSelf: "flex-start", height: "100%", marginRight: "5px" }} size={SpinnerSize.medium} />
+                                <Text style={{ alignSelf: 'center', fontWeight: '400', fontSize: 14 }}>
+                                    <span style={{ whiteSpace: 'pre-wrap' }}>Loading chat history</span>
+                                </Text>
+                            </div>
+                        </div>
                     </>}
-                </Stack>
-            </Stack>
+                </div>
+            </div>
             <Dialog
                 hidden={hideClearAllDialog}
                 onDismiss={clearing ? ()=>{} : onHideClearAllDialog}
@@ -179,10 +166,10 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
                 modalProps={modalProps}
             >
                 <DialogFooter>
-                {!clearingError && <PrimaryButton onClick={onClearAllChatHistory} disabled={clearing} text="Clear All" />}
-                <DefaultButton onClick={onHideClearAllDialog} disabled={clearing} text={!clearingError ? "Cancel" : "Close"} />
+                {!clearingError && <Button onClick={onClearAllChatHistory} disabled={clearing}>Clear All</Button>}
+                <Button onClick={onHideClearAllDialog} disabled={clearing}>{!clearingError ? "Cancel" : "Close"}</Button>
                 </DialogFooter>
             </Dialog>
-        </section>
+        </div>
     );
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Stack, TextField } from "@fluentui/react";
-import { SendRegular } from "@fluentui/react-icons";
-import Send from "../../assets/Send.svg";
+import { Button } from "@fluentui/react-components";
+import { Send48Filled } from "@fluentui/react-icons";
 import styles from "./QuestionInput.module.css";
 
 interface Props {
@@ -56,19 +56,15 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
                 onChange={onQuestionChange}
                 onKeyDown={onEnterPress}
             />
-            <div className={styles.questionInputSendButtonContainer} 
+            <Button className={styles.questionInputSendButtonContainer} 
                 role="button" 
                 tabIndex={0}
                 aria-label="Ask question button"
                 onClick={sendQuestion}
                 onKeyDown={e => e.key === "Enter" || e.key === " " ? sendQuestion() : null}
-            >
-                { sendQuestionDisabled ? 
-                    <SendRegular className={styles.questionInputSendButtonDisabled}/>
-                    :
-                    <img src={Send} className={styles.questionInputSendButton}/>
-                }
-            </div>
+                icon={<Send48Filled/>}
+                disabled={sendQuestionDisabled}
+            />
             <div className={styles.questionInputBottomBorder} />
         </Stack>
     );
