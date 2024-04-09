@@ -16,7 +16,6 @@ import { AppStateContext } from "../../state/AppProvider";
 import { CosmosDBStatus } from "../../api";
 
 const Layout = () => {
-  const [isSharePanelOpen, setIsSharePanelOpen] = useState<boolean>(false);
   const [copyClicked, setCopyClicked] = useState<boolean>(false);
   const [copyText, setCopyText] = useState<string>("Copy URL");
   const [shareLabel, setShareLabel] = useState<string | undefined>("Share");
@@ -26,10 +25,6 @@ const Layout = () => {
     useState<string>("Show chat history");
   const appStateContext = useContext(AppStateContext);
   const ui = appStateContext?.state.frontendSettings?.ui;
-
-  const handleShareClick = () => {
-    setIsSharePanelOpen(true);
-  };
 
   const handleCopyClick = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -76,7 +71,7 @@ const Layout = () => {
             flexDirection: "row",
             verticalAlign: "center",
           }}
-        >
+        > 
           <div
             style={{
               display: "flex",

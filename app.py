@@ -129,7 +129,7 @@ AZURE_OPENAI_MAX_TOKENS = os.environ.get("AZURE_OPENAI_MAX_TOKENS", 1000)
 AZURE_OPENAI_STOP_SEQUENCE = os.environ.get("AZURE_OPENAI_STOP_SEQUENCE")
 AZURE_OPENAI_SYSTEM_MESSAGE = os.environ.get(
     "AZURE_OPENAI_SYSTEM_MESSAGE",
-    "You are an AI assistant that helps people find information.",
+    "You are Mecoai, an AI rocket scientist and aerospace engineer assistant who helps people find information.",
 )
 AZURE_OPENAI_PREVIEW_API_VERSION = os.environ.get(
     "AZURE_OPENAI_PREVIEW_API_VERSION",
