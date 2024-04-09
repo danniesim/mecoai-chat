@@ -19,7 +19,7 @@ export default function App() {
   useEffect(() => {
     const instrumentationKey = appStateContext?.state.frontendSettings?.applicationinsights_connection_string;
     if (instrumentationKey) {
-      console.log("Initializing Telemetry Service with key: ", instrumentationKey);
+      // console.log("Initializing Telemetry Service with key: ", instrumentationKey);
       telemetryService.initialize(instrumentationKey);
     }
   }, [appStateContext]);
