@@ -1428,10 +1428,13 @@ class RejectMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if "headers" not in scope:
+        scope.
+        if "headers" not in scope or scope.path in [
+                "/", "/favicon.ico"] or scope.path.startswith("/assets"):
             return await self.app(scope, receive, send)
 
         for header, value in scope['headers']:
+            logging.debug(f"Header: {header} Value: {value}")
             if header.lower() == b'x-ms-token-aad-id-token' and value:
                 return await self.app(scope, receive, send)
 
