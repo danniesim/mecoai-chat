@@ -101,8 +101,8 @@ const Layout = () => {
               gap: "8px",
             }}
           >
-            {appStateContext?.state.isCosmosDBAvailable?.status !==
-              CosmosDBStatus.NotConfigured && (
+            {appStateContext?.state.isCosmosDBAvailable?.status ==
+              CosmosDBStatus.Working && (
               <HistoryButton
                 onClick={handleHistoryClick}
                 text={

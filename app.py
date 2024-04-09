@@ -36,6 +36,9 @@ bp = Blueprint(
     static_folder="static",
     template_folder="static")
 
+
+DEMO_USER = (os.environ.get("DEMO_USER") or "False").lower() == "true"
+
 # Current minimum Azure OpenAI version supported
 MINIMUM_SUPPORTED_AZURE_OPENAI_PREVIEW_API_VERSION = "2024-02-15-preview"
 
@@ -483,7 +486,8 @@ def get_configured_data_source():
                     True if AZURE_SEARCH_ENABLE_IN_DOMAIN.lower() == "true" else False
                 ),
                 "top_n_documents": (
-                    int(AZURE_SEARCH_TOP_K) if AZURE_SEARCH_TOP_K else int(SEARCH_TOP_K)
+                    int(AZURE_SEARCH_TOP_K) if AZURE_SEARCH_TOP_K else int(
+                        SEARCH_TOP_K)
                 ),
                 "query_type": query_type,
                 "semantic_configuration": (
@@ -515,7 +519,8 @@ def get_configured_data_source():
                 "container_name": AZURE_COSMOSDB_MONGO_VCORE_CONTAINER,
                 "fields_mapping": {
                     "content_fields": (
-                        parse_multi_columns(AZURE_COSMOSDB_MONGO_VCORE_CONTENT_COLUMNS)
+                        parse_multi_columns(
+                            AZURE_COSMOSDB_MONGO_VCORE_CONTENT_COLUMNS)
                         if AZURE_COSMOSDB_MONGO_VCORE_CONTENT_COLUMNS
                         else []
                     ),
@@ -535,7 +540,8 @@ def get_configured_data_source():
                         else None
                     ),
                     "vector_fields": (
-                        parse_multi_columns(AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS)
+                        parse_multi_columns(
+                            AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS)
                         if AZURE_COSMOSDB_MONGO_VCORE_VECTOR_COLUMNS
                         else []
                     ),
@@ -1383,6 +1389,17 @@ async def ensure_cosmos():
             return jsonify({"error": "CosmosDB is not working"}), 500
 
 
+@bp.route("/.auth/me", methods=["GET"])
+async def auth_me():
+    if DEMO_USER:
+        # if it's not, assume we're in development mode and return a default
+        # user
+        from backend.auth import sample_user
+        raw_user_object = sample_user.sample_user
+        return jsonify(raw_user_object), 200
+    return jsonify([]), 401
+
+
 async def generate_title(conversation_messages):
     # make sure the messages are sorted by _ts descending
     title_prompt = 'Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Respond with a json object in the format {{"title": string}}. Do not include any other commentary or description.'
@@ -1405,4 +1422,34 @@ async def generate_title(conversation_messages):
         return messages[-2]["content"]
 
 
+class RejectMiddleware:
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if "headers" not in scope:
+            return await self.app(scope, receive, send)
+
+        for header, value in scope['headers']:
+            if header.lower() == b'x-secret' and value:
+                return await self.app(scope, receive, send)
+
+        return await self.error_response(receive, send)
+
+    async def error_response(self, receive, send):
+        await send({
+            'type': 'http.response.start',
+            'status': 401,
+            'headers': [(b'content-length', b'0')],
+        })
+        await send({
+            'type': 'http.response.body',
+            'body': b'',
+            'more_body': False,
+        })
+
+
 app = create_app()
+if not DEMO_USER:
+    app.asgi_app = RejectMiddleware(app.asgi_app)
