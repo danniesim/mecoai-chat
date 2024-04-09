@@ -283,7 +283,9 @@ frontend_settings = {
     "citation_links": os.environ.get(
         "CITATION_LINKS",
         "false").lower() == "true",
-}
+    "applicationinsights_connection_string": os.environ.get(
+        "APPLICATIONINSIGHTS_CONNECTION_STRING",
+        "instrumentationKey=test")}
 
 
 def should_use_data():

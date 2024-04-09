@@ -117,6 +117,7 @@ export type FrontendSettings = {
     ui?: UI;
     sanitize_answer?: boolean;
     citation_links?: boolean;
+    applicationinsights_connection_string?: string | null;
 }
 
 export enum Feedback {
