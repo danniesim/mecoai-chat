@@ -1432,7 +1432,7 @@ class RejectMiddleware:
             return await self.app(scope, receive, send)
 
         for header, value in scope['headers']:
-            if header.lower() == b'x-ms-token-aad-access-token' and value:
+            if header.lower() == b'x-ms-token-aad-id-token' and value:
                 return await self.app(scope, receive, send)
 
         return await self.error_response(receive, send)
