@@ -5,11 +5,10 @@ import {
   useContext,
   useLayoutEffect,
 } from "react";
-import { Dialog, DialogType, Stack } from "@fluentui/react";
-import { Button } from "@fluentui/react-components";
+import { Dialog, DialogType, Stack, useTheme } from "@fluentui/react";
+import { Button, tokens } from "@fluentui/react-components";
 import {
   SquareRegular,
-  ShieldLockRegular,
   ErrorCircleRegular,
   Add48Regular,
   BroomRegular,
@@ -33,7 +32,6 @@ import {
   Citation,
   ToolMessageContent,
   ChatResponse,
-  getUserInfo,
   Conversation,
   historyGenerate,
   historyUpdate,
@@ -46,6 +44,7 @@ import { Answer } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ChatHistoryPanel } from "../../components/ChatHistory/ChatHistoryPanel";
 import { Splash } from "../../components/Splash";
+import { SignIn } from "../../components/SignIn";
 import { AppStateContext } from "../../state/AppProvider";
 import { useBoolean } from "@fluentui/react-hooks";
 
@@ -57,7 +56,9 @@ const enum messageStatus {
 
 const Chat = () => {
   const appStateContext = useContext(AppStateContext);
-  const AUTH_ENABLED = appStateContext?.state.frontendSettings?.auth_enabled;
+  const AUTH_CLIENT_ID =
+    appStateContext?.state.frontendSettings?.auth_client_id || null;
+  const user_id = appStateContext?.state.userId || null;
   const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showLoadingMessage, setShowLoadingMessage] = useState<boolean>(false);
@@ -65,7 +66,6 @@ const Chat = () => {
   const [isCitationPanelOpen, setIsCitationPanelOpen] =
     useState<boolean>(false);
   const abortFuncs = useRef([] as AbortController[]);
-  const [showAuthMessage, setShowAuthMessage] = useState<boolean>(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [processMessages, setProcessMessages] = useState<messageStatus>(
     messageStatus.NotRunning
@@ -122,19 +122,6 @@ const Chat = () => {
         ChatHistoryLoadingState.Loading
     );
   }, [appStateContext?.state.chatHistoryLoadingState]);
-
-  const getUserInfoList = async () => {
-    if (!AUTH_ENABLED) {
-      setShowAuthMessage(false);
-      return;
-    }
-    const userInfoList = await getUserInfo();
-    if (userInfoList.length === 0 && window.location.hostname !== "127.0.0.1") {
-      setShowAuthMessage(true);
-    } else {
-      setShowAuthMessage(false);
-    }
-  };
 
   let assistantMessage = {} as ChatMessage;
   let toolMessage = {} as ChatMessage;
@@ -712,10 +699,6 @@ const Chat = () => {
     }
   }, [processMessages]);
 
-  useEffect(() => {
-    if (AUTH_ENABLED !== undefined) getUserInfoList();
-  }, [AUTH_ENABLED]);
-
   useLayoutEffect(() => {
     chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [showLoadingMessage, processMessages]);
@@ -755,54 +738,35 @@ const Chat = () => {
 
   return (
     <div className={styles.container} role="main">
-      {showAuthMessage ? (
-        <Stack className={styles.chatEmptyState}>
-          <ShieldLockRegular
-            className={styles.chatIcon}
-            style={{ color: "darkorange", height: "200px", width: "200px" }}
+      {!user_id ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "20px",
+            background: tokens.colorNeutralBackground5,
+          }}
+        >
+          <br />
+          <Splash
+            headlineText={"Just Your Friendly Neighbourhood Rocket Scientist"}
+            subText={
+              "MecoAI is a simulated rocket scientist who answers your questions by referencing the Mecoteca" +
+              " - a large set of research notes curated while developing the Meco Rocket Simulator."
+            }
           />
-          <h1 className={styles.chatEmptyStateTitle}>
-            Authentication Not Configured
-          </h1>
-          <h2 className={styles.chatEmptyStateSubtitle}>
-            This app does not have authentication configured. Please add an
-            identity provider by finding your app in the{" "}
-            <a href="https://portal.azure.com/" target="_blank">
-              Azure Portal
-            </a>
-            and following{" "}
-            <a
-              href="https://learn.microsoft.com/en-us/azure/app-service/scenario-secure-app-authentication-app-service#3-configure-authentication-and-authorization"
-              target="_blank"
-            >
-              these instructions
-            </a>
-            .
-          </h2>
-          <h2
-            className={styles.chatEmptyStateSubtitle}
-            style={{ fontSize: "20px" }}
-          >
-            <strong>
-              Authentication configuration takes a few minutes to apply.{" "}
-            </strong>
-          </h2>
-          <h2
-            className={styles.chatEmptyStateSubtitle}
-            style={{ fontSize: "20px" }}
-          >
-            <strong>
-              If you deployed in the last 10 minutes, please wait and reload the
-              page after 10 minutes.
-            </strong>
-          </h2>
-        </Stack>
+          <SignIn auth_client_id={AUTH_CLIENT_ID} />
+          <br />
+          <br />
+        </div>
       ) : (
         <Stack horizontal className={styles.chatRoot}>
           <div className={styles.chatContainer}>
             {!messages || messages.length < 1 ? (
               <Stack className={styles.chatEmptyState}>
-                <Splash></Splash>
+                <Splash headlineText={"Fire Away!"} />
               </Stack>
             ) : (
               <div

@@ -1,7 +1,9 @@
 import copy
+import secrets
 import json
 import os
 import logging
+import urllib.parse
 import uuid
 from dotenv import load_dotenv
 import httpx
@@ -10,13 +12,21 @@ from quart import (
     Quart,
     jsonify,
     make_response,
+    redirect,
+    render_template_string,
     request,
     send_from_directory,
     render_template,
 )
+from quart_auth import (
+    AuthUser, current_user, login_required, login_user, logout_user, QuartAuth
+)
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 from openai import AsyncAzureOpenAI
 from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
+import urllib
 from backend.auth.auth_utils import get_authenticated_user_details
 from backend.history.cosmosdbservice import CosmosConversationClient
 
@@ -36,7 +46,7 @@ bp = Blueprint(
     static_folder="static",
     template_folder="static")
 
-
+AUTH_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 DEMO_USER = (os.environ.get("DEMO_USER") or "False").lower() == "true"
 
 # Current minimum Azure OpenAI version supported
@@ -49,7 +59,7 @@ UI_CHAT_LOGO = os.environ.get("UI_CHAT_LOGO")
 UI_CHAT_TITLE = os.environ.get("UI_CHAT_TITLE") or "Fire Away"
 UI_CHAT_DESCRIPTION = (
     os.environ.get("UI_CHAT_DESCRIPTION")
-    or "Meco is a simulated rocket scientist who answers your questions by referencing the Mecoteca"
+    or "MecoAI is a simulated rocket scientist who answers your questions by referencing the Mecoteca"
     " - a large set of research notes curated while developing the Meco Rocket Simulator."
 )
 UI_FAVICON = os.environ.get("UI_FAVICON") or "/favicon.ico"
@@ -62,6 +72,9 @@ def create_app():
     app = Quart(__name__)
     app.register_blueprint(bp)
     app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.secret_key = os.environ.get(
+        "QUART_SECRET_KEY") or secrets.token_urlsafe(16)
+    QuartAuth(app)
     return app
 
 
@@ -265,6 +278,8 @@ PROMPTFLOW_RESPONSE_FIELD_NAME = os.environ.get(
 )
 # Frontend Settings via Environment Variables
 AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "true").lower() == "true"
+AUTH_RESPONSE_TIMEOUT = os.environ.get(
+    "AUTH_RESPONSE_TIMEOUT", 10.0)
 CHAT_HISTORY_ENABLED = (
     AZURE_COSMOSDB_ACCOUNT
     and AZURE_COSMOSDB_DATABASE
@@ -273,6 +288,7 @@ CHAT_HISTORY_ENABLED = (
 SANITIZE_ANSWER = os.environ.get("SANITIZE_ANSWER", "false").lower() == "true"
 frontend_settings = {
     "auth_enabled": AUTH_ENABLED,
+    "auth_client_id": AUTH_CLIENT_ID,
     "feedback_enabled": AZURE_COSMOSDB_ENABLE_FEEDBACK and CHAT_HISTORY_ENABLED,
     "ui": {
         "title": UI_TITLE,
@@ -909,7 +925,30 @@ async def conversation_internal(request_body):
             return jsonify({"error": str(ex)}), 500
 
 
+async def generate_title(conversation_messages):
+    # make sure the messages are sorted by _ts descending
+    title_prompt = 'Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Respond with a json object in the format {{"title": string}}. Do not include any other commentary or description.'
+
+    messages = [
+        {"role": msg["role"], "content": msg["content"]}
+        for msg in conversation_messages
+    ]
+    messages.append({"role": "user", "content": title_prompt})
+
+    try:
+        azure_openai_client = init_openai_client(use_data=False)
+        response = await azure_openai_client.chat.completions.create(
+            model=AZURE_OPENAI_MODEL, messages=messages, temperature=1, max_tokens=64
+        )
+
+        title = json.loads(response.choices[0].message.content)["title"]
+        return title
+    except Exception as e:
+        return messages[-2]["content"]
+
+
 @bp.route("/conversation", methods=["POST"])
+@login_required
 async def conversation():
     if not request.is_json:
         return jsonify({"error": "request must be json"}), 415
@@ -929,6 +968,7 @@ def get_frontend_settings():
 
 ## Conversation History API ##
 @bp.route("/history/generate", methods=["POST"])
+@login_required
 async def add_conversation():
     authenticated_user = get_authenticated_user_details(
         request_headers=request.headers)
@@ -989,6 +1029,7 @@ async def add_conversation():
 
 
 @bp.route("/history/update", methods=["POST"])
+@login_required
 async def update_conversation():
     authenticated_user = get_authenticated_user_details(
         request_headers=request.headers)
@@ -1042,6 +1083,7 @@ async def update_conversation():
 
 
 @bp.route("/history/message_feedback", methods=["POST"])
+@login_required
 async def update_message():
     authenticated_user = get_authenticated_user_details(
         request_headers=request.headers)
@@ -1089,6 +1131,7 @@ async def update_message():
 
 
 @bp.route("/history/delete", methods=["DELETE"])
+@login_required
 async def delete_conversation():
     # get the user id from the request headers
     authenticated_user = get_authenticated_user_details(
@@ -1135,6 +1178,7 @@ async def delete_conversation():
 
 
 @bp.route("/history/list", methods=["GET"])
+@login_required
 async def list_conversations():
     offset = request.args.get("offset", 0)
     authenticated_user = get_authenticated_user_details(
@@ -1161,6 +1205,7 @@ async def list_conversations():
 
 
 @bp.route("/history/read", methods=["POST"])
+@login_required
 async def get_conversation():
     authenticated_user = get_authenticated_user_details(
         request_headers=request.headers)
@@ -1216,6 +1261,7 @@ async def get_conversation():
 
 
 @bp.route("/history/rename", methods=["POST"])
+@login_required
 async def rename_conversation():
     authenticated_user = get_authenticated_user_details(
         request_headers=request.headers)
@@ -1261,6 +1307,7 @@ async def rename_conversation():
 
 
 @bp.route("/history/delete_all", methods=["DELETE"])
+@login_required
 async def delete_all_conversations():
     # get the user id from the request headers
     authenticated_user = get_authenticated_user_details(
@@ -1308,6 +1355,7 @@ async def delete_all_conversations():
 
 
 @bp.route("/history/clear", methods=["POST"])
+@login_required
 async def clear_messages():
     # get the user id from the request headers
     authenticated_user = get_authenticated_user_details(
@@ -1347,6 +1395,7 @@ async def clear_messages():
 
 
 @bp.route("/history/ensure", methods=["GET"])
+@login_required
 async def ensure_cosmos():
     if not AZURE_COSMOSDB_ACCOUNT:
         return jsonify({"error": "CosmosDB is not configured"}), 404
@@ -1389,7 +1438,37 @@ async def ensure_cosmos():
             return jsonify({"error": "CosmosDB is not working"}), 500
 
 
-@bp.route("/.auth/me", methods=["GET"])
+@bp.route("/auth/callback/google", methods=["POST"])
+async def auth_callback_google():
+    # import jwt
+    request_data = await request.get_data()
+    # request_data is a bytes object, so we need to convert it to a string
+    request_dict = dict(urllib.parse.parse_qsl(request_data.decode("utf-8")))
+    logging.debug(f"request_dict: {request_dict}")
+    token = request_dict["credential"]
+
+    try:
+        decoded = id_token.verify_oauth2_token(
+            token, requests.Request(), AUTH_CLIENT_ID)
+    except Exception as e:
+        logging.error(f"Error verifying token: {e}")
+        return jsonify({"error": "Error verifying token"}), 401
+
+    logging.debug(f"Decoded token: {decoded}")
+    email = decoded["email"]
+    name = decoded["name"]
+    email_verified = decoded["email_verified"]
+    picture = decoded["picture"]
+    sub = decoded["sub"]
+    logging.debug(
+        f"email: {email}, name: {name}, email_verified: {email_verified}, picture: {picture}, sub: {sub}")
+
+    login_user(AuthUser(sub))
+
+    return redirect('/')
+
+
+@bp.route("/auth/me", methods=["GET"])
 async def auth_me():
     if DEMO_USER:
         # if it's not, assume we're in development mode and return a default
@@ -1397,61 +1476,48 @@ async def auth_me():
         from backend.auth import sample_user
         raw_user_object = sample_user.sample_user
         return jsonify(raw_user_object), 200
+    elif current_user.is_authenticated:
+        return jsonify([{
+            "access_token": "",
+            "expires_on": "",
+            "id_token": "",
+            "provider_name": "",
+            "user_claims": [],
+            "user_id": current_user.auth_id,
+        }]), 200
     return jsonify([]), 401
 
 
-async def generate_title(conversation_messages):
-    # make sure the messages are sorted by _ts descending
-    title_prompt = 'Summarize the conversation so far into a 4-word or less title. Do not use any quotation marks or punctuation. Respond with a json object in the format {{"title": string}}. Do not include any other commentary or description.'
-
-    messages = [
-        {"role": msg["role"], "content": msg["content"]}
-        for msg in conversation_messages
-    ]
-    messages.append({"role": "user", "content": title_prompt})
-
-    try:
-        azure_openai_client = init_openai_client(use_data=False)
-        response = await azure_openai_client.chat.completions.create(
-            model=AZURE_OPENAI_MODEL, messages=messages, temperature=1, max_tokens=64
-        )
-
-        title = json.loads(response.choices[0].message.content)["title"]
-        return title
-    except Exception as e:
-        return messages[-2]["content"]
-
-
-class RejectMiddleware:
-
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, scope, receive, send):
-        if "headers" not in scope or scope["path"] in [
-                "/", "/favicon.ico", "/frontend_settings"] or scope["path"].startswith("/assets"):
-            return await self.app(scope, receive, send)
-
-        for header, value in scope['headers']:
-            logging.debug(f"Header: {header} Value: {value}")
-            if header.lower() == b'x-ms-client-principal-id' and value:
-                return await self.app(scope, receive, send)
-
-        return await self.error_response(receive, send)
-
-    async def error_response(self, receive, send):
-        await send({
-            'type': 'http.response.start',
-            'status': 401,
-            'headers': [(b'content-length', b'0')],
-        })
-        await send({
-            'type': 'http.response.body',
-            'body': b'',
-            'more_body': False,
-        })
-
-
 app = create_app()
-if not DEMO_USER:
-    app.asgi_app = RejectMiddleware(app.asgi_app)
+
+
+@app.route("/auth/logout")
+async def logout():
+    logout_user()
+    return redirect('/')
+
+
+@app.route("/auth")
+@login_required
+async def restricted_route():
+    # Will be 2 given the login_user code above
+    logging.debug(current_user.auth_id)
+    return (jsonify([{
+        "access_token": "",
+        "expires_on": "",
+        "id_token": "",
+        "provider_name": "",
+        "user_claims": [],
+        "user_id": current_user.auth_id,
+    }]))
+
+
+@app.route("/auth/hello")
+async def hello():
+    return await render_template_string("""
+    {% if current_user.is_authenticated %}
+      Hello logged in user
+    {% else %}
+      Hello logged out user
+    {% endif %}
+    """)

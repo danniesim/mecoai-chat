@@ -11,9 +11,11 @@ export interface AppState {
     currentChat: Conversation | null;
     frontendSettings: FrontendSettings | null;
     feedbackState: { [answerId: string]: Feedback.Neutral | Feedback.Positive | Feedback.Negative; };
+    userId: string | null;
 }
 
 export type Action =
+    | { type: 'SET_USER_ID', payload: string | null  }
     | { type: 'TOGGLE_CHAT_HISTORY' }
     | { type: 'SET_COSMOSDB_STATUS', payload: CosmosDBHealth }
     | { type: 'UPDATE_CHAT_HISTORY_LOADING_STATE', payload: ChatHistoryLoadingState }
@@ -40,7 +42,8 @@ const initialState: AppState = {
         status: CosmosDBStatus.NotConfigured,
     },
     frontendSettings: null,
-    feedbackState: {}
+    feedbackState: {},
+    userId: null,
 };
 
 export const AppStateContext = createContext<{

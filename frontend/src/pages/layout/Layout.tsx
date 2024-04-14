@@ -1,4 +1,4 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useNavigate } from "react-router-dom";
 import styles from "./Layout.module.css";
 import MecoAI from "../../assets/mecoai.svg";
 import {
@@ -11,11 +11,12 @@ import {
   Button,
 } from "@fluentui/react-components";
 import { useContext, useEffect, useState } from "react";
-import { HistoryButton, ShareButton } from "../../components/common/Button";
+import { HistoryButton, ShareButton, SignOutButton } from "../../components/common/Button";
 import { AppStateContext } from "../../state/AppProvider";
-import { CosmosDBStatus } from "../../api";
+import { CosmosDBStatus, getUserInfo } from "../../api";
 
 const Layout = () => {
+  const navigate = useNavigate();
   const [copyClicked, setCopyClicked] = useState<boolean>(false);
   const [copyText, setCopyText] = useState<string>("Copy URL");
   const [shareLabel, setShareLabel] = useState<string | undefined>("Share");
@@ -25,6 +26,26 @@ const Layout = () => {
     useState<string>("Show chat history");
   const appStateContext = useContext(AppStateContext);
   const ui = appStateContext?.state.frontendSettings?.ui;
+  const AUTH_ENABLED = appStateContext?.state.frontendSettings?.auth_enabled || null;
+  const userId = appStateContext?.state.userId || null;
+
+  const getUserInfoList = async () => {
+    if (!AUTH_ENABLED) {
+      appStateContext?.dispatch({ type: "SET_USER_ID", payload: "test"});
+      return;
+    }
+    const userInfoList = await getUserInfo();
+    if (userInfoList.length === 0 && window.location.hostname !== "127.0.0.1") {
+      appStateContext?.dispatch({ type: "SET_USER_ID", payload: "anonymous"});
+    } else {
+      appStateContext?.dispatch({ type: "SET_USER_ID", payload: userInfoList[0].user_id });
+    }
+  };
+
+  useEffect(() => {
+    if (AUTH_ENABLED !== null)
+      getUserInfoList();
+  }, [AUTH_ENABLED]);
 
   const handleCopyClick = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -33,6 +54,19 @@ const Layout = () => {
 
   const handleHistoryClick = () => {
     appStateContext?.dispatch({ type: "TOGGLE_CHAT_HISTORY" });
+  };
+
+  const handleSignOutClick = () => {
+    fetch("/auth/logout", {
+      method: "GET",
+    })
+      .then(() => {
+        appStateContext?.dispatch({ type: "SET_USER_ID", payload: null });
+        navigate("/");
+      })
+      .catch((error) => {
+        console.error("Error signing out: ", error);
+      });
   };
 
   useEffect(() => {
@@ -102,7 +136,7 @@ const Layout = () => {
             }}
           >
             {appStateContext?.state.isCosmosDBAvailable?.status ==
-              CosmosDBStatus.Working && (
+              CosmosDBStatus.Working && userId && (
               <HistoryButton
                 onClick={handleHistoryClick}
                 text={
@@ -141,6 +175,14 @@ const Layout = () => {
                   </DialogContent>
                 </DialogSurface>
               </Dialog>
+            )}
+            {userId != null && (
+              <SignOutButton
+                onClick={handleSignOutClick}
+                text={
+                  "Sign out"
+                }
+              />
             )}
           </div>
         </div>
