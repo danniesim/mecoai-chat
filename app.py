@@ -1395,7 +1395,6 @@ async def clear_messages():
 
 
 @bp.route("/history/ensure", methods=["GET"])
-@login_required
 async def ensure_cosmos():
     if not AZURE_COSMOSDB_ACCOUNT:
         return jsonify({"error": "CosmosDB is not configured"}), 404
