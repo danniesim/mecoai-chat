@@ -5,14 +5,25 @@ import {
   useContext,
   useLayoutEffect,
 } from "react";
-import { Dialog, DialogType, Stack, useTheme } from "@fluentui/react";
-import { Button, tokens } from "@fluentui/react-components";
+import { DialogFooter, Stack } from "@fluentui/react";
+import {
+  Text,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  DialogTrigger,
+} from "@fluentui/react-components";
 import {
   SquareRegular,
   ErrorCircleRegular,
   Add48Regular,
   BroomRegular,
   StopRegular,
+  Delete16Regular as DeleteIcon,
+  ArrowExitFilled as ExitIcon,
 } from "@fluentui/react-icons";
 
 import ReactMarkdown from "react-markdown";
@@ -44,9 +55,8 @@ import { Answer } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ChatHistoryPanel } from "../../components/ChatHistory/ChatHistoryPanel";
 import { Splash } from "../../components/Splash";
-import { SignIn } from "../../components/SignIn";
 import { AppStateContext } from "../../state/AppProvider";
-import { useBoolean } from "@fluentui/react-hooks";
+import { Home } from "../Home";
 
 const enum messageStatus {
   NotRunning = "Not Running",
@@ -69,11 +79,10 @@ const Chat = () => {
     messageStatus.NotRunning
   );
   const [clearingChat, setClearingChat] = useState<boolean>(false);
-  const [hideErrorDialog, { toggle: toggleErrorDialog }] = useBoolean(true);
+  const [hideErrorDialog, setHideErrorDialog] = useState(true);
   const [errorMsg, setErrorMsg] = useState<ErrorMessage | null>();
 
   const errorDialogContentProps = {
-    type: DialogType.close,
     title: errorMsg?.title,
     closeButtonAriaLabel: "Close",
     subText: errorMsg?.subtitle,
@@ -103,12 +112,12 @@ const Chat = () => {
         title: "Chat history is not enabled",
         subtitle: subtitle,
       });
-      toggleErrorDialog();
+      setHideErrorDialog(false);
     }
   }, [appStateContext?.state.isCosmosDBAvailable]);
 
   const handleErrorDialogClose = () => {
-    toggleErrorDialog();
+    setHideErrorDialog(true);
     setTimeout(() => {
       setErrorMsg(null);
     }, 500);
@@ -592,7 +601,7 @@ const Chat = () => {
           subtitle:
             "Please try again. If the problem persists, please contact the site administrator.",
         });
-        toggleErrorDialog();
+        setHideErrorDialog(false);
       } else {
         appStateContext?.dispatch({
           type: "DELETE_CURRENT_CHAT_MESSAGES",
@@ -737,28 +746,7 @@ const Chat = () => {
   return (
     <div className={styles.container} role="main">
       {!user_id ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "20px",
-            background: tokens.colorNeutralBackground5,
-          }}
-        >
-          <br />
-          <Splash
-            headlineText={"Just Your Friendly Neighbourhood Rocket Scientist"}
-            subText={
-              "MecoAI is a simulated rocket scientist who answers your questions by referencing the Mecoteca" +
-              " - a large set of research notes curated while developing the Meco Rocket Simulator."
-            }
-          />
-          <SignIn />
-          <br />
-          <br />
-        </div>
+        <Home />
       ) : (
         <Stack horizontal className={styles.chatRoot}>
           <div className={styles.chatContainer}>
@@ -773,7 +761,7 @@ const Chat = () => {
                 role="log"
               >
                 {messages.map((answer, index) => (
-                  <>
+                  <div key={answer.id}>
                     {answer.role === "user" ? (
                       <div className={styles.chatMessageUser} tabIndex={0}>
                         <div className={styles.chatMessageUserMessage}>
@@ -811,7 +799,7 @@ const Chat = () => {
                         </span>
                       </div>
                     ) : null}
-                  </>
+                  </div>
                 ))}
                 {showLoadingMessage && (
                   <>
@@ -849,7 +837,7 @@ const Chat = () => {
                   </Button>
                 </div>
               )}
-              <Stack>
+              <div>
                 {appStateContext?.state.isCosmosDBAvailable?.status !==
                   CosmosDBStatus.NotConfigured && (
                   <Button
@@ -860,30 +848,77 @@ const Chat = () => {
                     aria-label="start a new chat button"
                   />
                 )}
-                <Button
-                  className={
-                    appStateContext?.state.isCosmosDBAvailable?.status !==
-                    CosmosDBStatus.NotConfigured
-                      ? styles.clearChatBroom
-                      : styles.clearChatBroomNoCosmos
-                  }
-                  icon={<BroomRegular />}
-                  onClick={
-                    appStateContext?.state.isCosmosDBAvailable?.status !==
-                    CosmosDBStatus.NotConfigured
-                      ? clearChat
-                      : newChat
-                  }
-                  disabled={disabledButton()}
-                  aria-label="clear chat button"
-                />
-                <Dialog
-                  hidden={hideErrorDialog}
-                  onDismiss={handleErrorDialogClose}
-                  dialogContentProps={errorDialogContentProps}
-                  modalProps={modalProps}
-                ></Dialog>
-              </Stack>
+                <Dialog>
+                  <DialogTrigger disableButtonEnhancement>
+                    <Button
+                      className={
+                        appStateContext?.state.isCosmosDBAvailable?.status !==
+                        CosmosDBStatus.NotConfigured
+                          ? styles.clearChatBroom
+                          : styles.clearChatBroomNoCosmos
+                      }
+                      icon={<BroomRegular />}
+                      disabled={disabledButton()}
+                      aria-label="clear chat button"
+                    />
+                  </DialogTrigger>
+                  <DialogSurface
+                    {...modalProps}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "end",
+                      flexFlow: "row wrap",
+                      gap: "8px",
+                    }}
+                  >
+                    <DialogTitle
+                      style={{
+                        flex: "1 0 100%",
+                      }}
+                    >
+                      Are you sure you want clear this chat?
+                    </DialogTitle>
+                    <DialogContent>
+                      <DialogBody>
+                        <Text>
+                          The contents of this chat session will permanently
+                          cleared.
+                        </Text>
+                      </DialogBody>
+                    </DialogContent>
+                    <DialogFooter>
+                      <DialogTrigger disableButtonEnhancement>
+                        <Button
+                          icon={<DeleteIcon />}
+                          onClick={
+                            appStateContext?.state.isCosmosDBAvailable
+                              ?.status !== CosmosDBStatus.NotConfigured
+                              ? clearChat
+                              : newChat
+                          }
+                        >
+                          Clear Chat
+                        </Button>
+                      </DialogTrigger>
+                      <DialogTrigger disableButtonEnhancement>
+                        <Button icon={<ExitIcon />}>Cancel</Button>
+                      </DialogTrigger>
+                    </DialogFooter>
+                  </DialogSurface>
+                </Dialog>
+                <Dialog modalType="alert" open={!hideErrorDialog}>
+                  <DialogSurface {...modalProps}>
+                    <DialogTitle>{errorDialogContentProps.title}</DialogTitle>
+                    <DialogContent>
+                      <DialogBody>{errorDialogContentProps.subText}</DialogBody>
+                    </DialogContent>
+                    <DialogTrigger disableButtonEnhancement>
+                      <Button onClick={handleErrorDialogClose}>Close</Button>
+                    </DialogTrigger>
+                  </DialogSurface>
+                </Dialog>
+              </div>
               <QuestionInput
                 clearOnSend
                 placeholder="Type a new question..."

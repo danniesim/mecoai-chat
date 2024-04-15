@@ -189,7 +189,7 @@ export const ChatHistoryListItemCell: React.FC<
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        backgroundColor: isSelected ? '#3f3f3f' : 'transparent',
+        backgroundColor: isSelected ? "#3f3f3f" : "transparent",
         display: "flex",
         flexDirection: "row",
         justifyContent: "space-between",
@@ -202,20 +202,21 @@ export const ChatHistoryListItemCell: React.FC<
         paddingBottom: "5px",
         boxSizing: "border-box",
         borderRadius: "5px",
-        background: "#3c3c3c"
       }}
     >
       {edit ? (
         <>
-          <div style={{ 
-            width: "100%",
-            display: "flex",
-            flexDirection: "row",
-            }}>
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+            }}
+          >
             <form
               aria-label="edit title form"
               onSubmit={(e) => handleSaveEdit(e)}
-              style={{ padding: "0px", margin: "0px", width: "100%"}}
+              style={{ padding: "0px", margin: "0px", width: "100%" }}
             >
               <div
                 style={{
@@ -234,39 +235,46 @@ export const ChatHistoryListItemCell: React.FC<
                   onKeyDown={handleKeyPressEdit}
                   // errorMessage={errorRename}
                   disabled={errorRename ? true : false}
-                  style={{ margin: "0px", padding: "0px", height: "12px"}}
+                  style={{ margin: "0px", padding: "0px", height: "12px" }}
                   appearance="underline"
                 />
                 {editTitle && (
-                    <div
-                      aria-label="action button group"
-                      style={{ display: "flex", flexDirection: "row", justifyContent: "end", width: "100%"}}
-                    >
-                      <Button
-                        disabled={errorRename !== undefined}
-                        onKeyDown={(e) =>
-                          e.key === " " || e.key === "Enter"
-                            ? handleSaveEdit(e)
-                            : null
-                        }
-                        onClick={(e) => handleSaveEdit(e)}
-                        aria-label="confirm new title"
-                        icon={<CheckMarkIcon/>}
-                        size="small"
-                      />
-                      <Button
-                        disabled={errorRename !== undefined}
-                        onKeyDown={(e) =>
-                          e.key === " " || e.key === "Enter"
-                            ? cancelEditTitle()
-                            : null
-                        }
-                        onClick={() => cancelEditTitle()}
-                        aria-label="cancel edit title"
-                        icon={<CancelIcon style={{width: "16px", height: "16px"}}/>}
-                        size="small"
-                      />
-                    </div>
+                  <div
+                    aria-label="action button group"
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "end",
+                      width: "100%",
+                    }}
+                  >
+                    <Button
+                      disabled={errorRename !== undefined}
+                      onKeyDown={(e) =>
+                        e.key === " " || e.key === "Enter"
+                          ? handleSaveEdit(e)
+                          : null
+                      }
+                      onClick={(e) => handleSaveEdit(e)}
+                      aria-label="confirm new title"
+                      icon={<CheckMarkIcon />}
+                      size="small"
+                    />
+                    <Button
+                      disabled={errorRename !== undefined}
+                      onKeyDown={(e) =>
+                        e.key === " " || e.key === "Enter"
+                          ? cancelEditTitle()
+                          : null
+                      }
+                      onClick={() => cancelEditTitle()}
+                      aria-label="cancel edit title"
+                      icon={
+                        <CancelIcon style={{ width: "16px", height: "16px" }} />
+                      }
+                      size="small"
+                    />
+                  </div>
                 )}
               </div>
               {errorRename && (
@@ -287,27 +295,44 @@ export const ChatHistoryListItemCell: React.FC<
         </>
       ) : (
         <>
-          <div style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "row",
-            gap: "1px"
-            }}>
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+              gap: "1px",
+            }}
+          >
             <div className={styles.chatTitle} style={{ height: "24px" }}>
               {truncatedTitle}
             </div>
             {(isSelected || isHovered) && (
-              <div style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "end"
-              }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "end",
+                }}
+              >
                 <Dialog>
                   <DialogTrigger disableButtonEnhancement>
                     <Button icon={<DeleteIcon />} title="Delete" size="small" />
                   </DialogTrigger>
-                  <DialogSurface {...modalProps}>
-                    <DialogTitle>
+                  <DialogSurface
+                    {...modalProps}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "end",
+                      flexFlow: "row wrap",
+                      gap: "8px",
+                    }}
+                  >
+                    <DialogTitle
+                      style={{
+                        flex: "1 0 100%",
+                      }}
+                    >
                       Are you sure you want to delete this item?
                     </DialogTitle>
                     <DialogContent>
@@ -343,7 +368,9 @@ export const ChatHistoryListItemCell: React.FC<
       {errorDelete && (
         <Text
           style={{
-            color: "red", marginTop: 5, fontSize: 14
+            color: "red",
+            marginTop: 5,
+            fontSize: 14,
           }}
         >
           Error: could not delete item

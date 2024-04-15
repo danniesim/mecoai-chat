@@ -9,9 +9,14 @@ import {
   DialogContent,
   Input,
   Button,
+  tokens,
 } from "@fluentui/react-components";
 import { useContext, useEffect, useState } from "react";
-import { HistoryButton, ShareButton, SignOutButton } from "../../components/common/Button";
+import {
+  HistoryButton,
+  ShareButton,
+  SignOutButton,
+} from "../../components/common/Button";
 import { AppStateContext } from "../../state/AppProvider";
 import { CosmosDBStatus, getUserInfo } from "../../api";
 
@@ -26,25 +31,28 @@ const Layout = () => {
     useState<string>("Show chat history");
   const appStateContext = useContext(AppStateContext);
   const ui = appStateContext?.state.frontendSettings?.ui;
-  const AUTH_ENABLED = appStateContext?.state.frontendSettings?.auth_enabled || null;
+  const AUTH_ENABLED =
+    appStateContext?.state.frontendSettings?.auth_enabled || null;
   const userId = appStateContext?.state.userId || null;
 
   const getUserInfoList = async () => {
     if (!AUTH_ENABLED) {
-      appStateContext?.dispatch({ type: "SET_USER_ID", payload: "test"});
+      appStateContext?.dispatch({ type: "SET_USER_ID", payload: "test" });
       return;
     }
     const userInfoList = await getUserInfo();
     if (userInfoList.length === 0 && window.location.hostname !== "127.0.0.1") {
-      appStateContext?.dispatch({ type: "SET_USER_ID", payload: "anonymous"});
+      appStateContext?.dispatch({ type: "SET_USER_ID", payload: "anonymous" });
     } else {
-      appStateContext?.dispatch({ type: "SET_USER_ID", payload: userInfoList[0].user_id });
+      appStateContext?.dispatch({
+        type: "SET_USER_ID",
+        payload: userInfoList[0].user_id,
+      });
     }
   };
 
   useEffect(() => {
-    if (AUTH_ENABLED !== null)
-      getUserInfoList();
+    if (AUTH_ENABLED !== null) getUserInfoList();
   }, [AUTH_ENABLED]);
 
   const handleCopyClick = () => {
@@ -105,7 +113,7 @@ const Layout = () => {
             flexDirection: "row",
             verticalAlign: "center",
           }}
-        > 
+        >
           <div
             style={{
               display: "flex",
@@ -136,16 +144,17 @@ const Layout = () => {
             }}
           >
             {appStateContext?.state.isCosmosDBAvailable?.status ==
-              CosmosDBStatus.Working && userId && (
-              <HistoryButton
-                onClick={handleHistoryClick}
-                text={
-                  appStateContext?.state?.isChatHistoryOpen
-                    ? hideHistoryLabel
-                    : showHistoryLabel
-                }
-              />
-            )}
+              CosmosDBStatus.Working &&
+              userId && (
+                <HistoryButton
+                  onClick={handleHistoryClick}
+                  text={
+                    appStateContext?.state?.isChatHistoryOpen
+                      ? hideHistoryLabel
+                      : showHistoryLabel
+                  }
+                />
+              )}
             {ui?.show_share_button && (
               <Dialog>
                 <DialogTrigger>
@@ -177,12 +186,7 @@ const Layout = () => {
               </Dialog>
             )}
             {userId != null && (
-              <SignOutButton
-                onClick={handleSignOutClick}
-                text={
-                  "Sign out"
-                }
-              />
+              <SignOutButton onClick={handleSignOutClick} text={"Sign out"} />
             )}
           </div>
         </div>
