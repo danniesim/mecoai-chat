@@ -41,6 +41,7 @@ const Layout = () => {
       return;
     }
     const userInfoList = await getUserInfo();
+    appStateContext?.dispatch({ type: "SET_USER_LOADED", payload: true });
     if (userInfoList.length === 0 && window.location.hostname !== "127.0.0.1") {
       appStateContext?.dispatch({ type: "SET_USER_ID", payload: "anonymous" });
     } else {

@@ -27,9 +27,11 @@ export interface AppState {
       | Feedback.Negative;
   };
   userId: string | null;
+  userLoaded: boolean;
 }
 
 export type Action =
+  | { type: "SET_USER_LOADED"; payload: boolean }
   | { type: "SET_USER_ID"; payload: string | null }
   | { type: "TOGGLE_CHAT_HISTORY" }
   | { type: "SET_COSMOSDB_STATUS"; payload: CosmosDBHealth }
@@ -68,6 +70,7 @@ const initialState: AppState = {
   frontendSettings: null,
   feedbackState: {},
   userId: null,
+  userLoaded: false,
 };
 
 export const AppStateContext = createContext<

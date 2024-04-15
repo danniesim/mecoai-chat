@@ -75,6 +75,7 @@ def create_app():
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = os.environ.get(
         "QUART_SECRET_KEY") or secrets.token_urlsafe(16)
+    QuartAuth(app)
     return app
 
 

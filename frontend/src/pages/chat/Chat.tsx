@@ -82,7 +82,6 @@ const Chat = () => {
   const [clearingChat, setClearingChat] = useState<boolean>(false);
   const [hideErrorDialog, setHideErrorDialog] = useState(true);
   const [errorMsg, setErrorMsg] = useState<ErrorMessage | null>();
-  const [hasLoadedUser, setHasLoadedUser] = useState(false);
 
   const errorDialogContentProps = {
     title: errorMsg?.title,
@@ -745,15 +744,11 @@ const Chat = () => {
     );
   };
 
-  useEffect(() => {
-    if (user_id !== null) {
-      setHasLoadedUser(true);
-    }
-  }, [user_id]);
+  const userLoaded = appStateContext?.state.userLoaded;
 
   return (
     <div className={styles.container} role="main">
-      {hasLoadedUser && !user_id ? (
+      {userLoaded && !user_id ? (
         <Home />
       ) : (
         user_id && (
