@@ -28,7 +28,7 @@ from openai import AsyncAzureOpenAI
 from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
 import urllib
 from backend.auth.auth_utils import get_authenticated_user_details
-from backend.history.cosmosdbservice import CosmosConversationClient
+from backend.history.cosmosdbservice import CosmosConversationClient, CosmosSignUpClient
 
 from backend.utils import (
     format_as_ndjson,
@@ -199,9 +199,13 @@ SHOULD_STREAM = True if AZURE_OPENAI_STREAM.lower() == "true" else False
 
 # Chat History CosmosDB Integration Settings
 AZURE_COSMOSDB_DATABASE = os.environ.get("AZURE_COSMOSDB_DATABASE")
+AZURE_COSMOSDB_SIGN_UP_DATABASE = os.environ.get("AZURE_COSMOSDB_SIGN_UP_DATABASE")
 AZURE_COSMOSDB_ACCOUNT = os.environ.get("AZURE_COSMOSDB_ACCOUNT")
 AZURE_COSMOSDB_CONVERSATIONS_CONTAINER = os.environ.get(
     "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER"
+)
+AZURE_COSMOSDB_SIGN_UPS_CONTAINER = os.environ.get(
+    "AZURE_COSMOSDB_SIGN_UPS_CONTAINER"
 )
 AZURE_COSMOSDB_ACCOUNT_KEY = os.environ.get("AZURE_COSMOSDB_ACCOUNT_KEY")
 AZURE_COSMOSDB_ENABLE_FEEDBACK = (
@@ -401,7 +405,8 @@ def init_openai_client(use_data=SHOULD_USE_DATA):
         raise e
 
 
-def init_cosmosdb_client():
+def init_cosmosdb_conservation_client(
+        container_name=AZURE_COSMOSDB_CONVERSATIONS_CONTAINER):
     cosmos_conversation_client = None
     if CHAT_HISTORY_ENABLED:
         try:
@@ -418,7 +423,7 @@ def init_cosmosdb_client():
                 cosmosdb_endpoint=cosmos_endpoint,
                 credential=credential,
                 database_name=AZURE_COSMOSDB_DATABASE,
-                container_name=AZURE_COSMOSDB_CONVERSATIONS_CONTAINER,
+                container_name=container_name,
                 enable_message_feedback=AZURE_COSMOSDB_ENABLE_FEEDBACK,
             )
         except Exception as e:
@@ -429,6 +434,37 @@ def init_cosmosdb_client():
         logging.debug("CosmosDB not configured")
 
     return cosmos_conversation_client
+
+
+def init_cosmosdb_sign_up_client(
+        container_name=AZURE_COSMOSDB_SIGN_UPS_CONTAINER):
+    cosmos_sign_up_client = None
+    if CHAT_HISTORY_ENABLED:
+        try:
+            cosmos_endpoint = (
+                f"https://{AZURE_COSMOSDB_ACCOUNT}.documents.azure.com:443/"
+            )
+
+            if not AZURE_COSMOSDB_ACCOUNT_KEY:
+                credential = DefaultAzureCredential()
+            else:
+                credential = AZURE_COSMOSDB_ACCOUNT_KEY
+
+            cosmos_sign_up_client = CosmosSignUpClient(
+                cosmosdb_endpoint=cosmos_endpoint,
+                credential=credential,
+                database_name=AZURE_COSMOSDB_SIGN_UP_DATABASE,
+                container_name=container_name,
+                enable_message_feedback=AZURE_COSMOSDB_ENABLE_FEEDBACK,
+            )
+        except Exception as e:
+            logging.exception("Exception in CosmosDB initialization", e)
+            cosmos_sign_up_client = None
+            raise e
+    else:
+        logging.debug("CosmosDB not configured")
+
+    return cosmos_sign_up_client
 
 
 def get_configured_data_source():
@@ -979,7 +1015,7 @@ async def add_conversation():
 
     try:
         # make sure cosmos is configured
-        cosmos_conversation_client = init_cosmosdb_client()
+        cosmos_conversation_client = init_cosmosdb_conservation_client()
         if not cosmos_conversation_client:
             raise Exception("CosmosDB is not configured or not working")
 
@@ -1040,7 +1076,7 @@ async def update_conversation():
 
     try:
         # make sure cosmos is configured
-        cosmos_conversation_client = init_cosmosdb_client()
+        cosmos_conversation_client = init_cosmosdb_conservation_client()
         if not cosmos_conversation_client:
             raise Exception("CosmosDB is not configured or not working")
 
@@ -1087,7 +1123,7 @@ async def update_message():
     authenticated_user = get_authenticated_user_details(
         request_headers=request.headers)
     user_id = authenticated_user["user_principal_id"]
-    cosmos_conversation_client = init_cosmosdb_client()
+    cosmos_conversation_client = init_cosmosdb_conservation_client()
 
     # check request for message_id
     request_json = await request.get_json()
@@ -1146,7 +1182,7 @@ async def delete_conversation():
             return jsonify({"error": "conversation_id is required"}), 400
 
         # make sure cosmos is configured
-        cosmos_conversation_client = init_cosmosdb_client()
+        cosmos_conversation_client = init_cosmosdb_conservation_client()
         if not cosmos_conversation_client:
             raise Exception("CosmosDB is not configured or not working")
 
@@ -1185,7 +1221,7 @@ async def list_conversations():
     user_id = authenticated_user["user_principal_id"]
 
     # make sure cosmos is configured
-    cosmos_conversation_client = init_cosmosdb_client()
+    cosmos_conversation_client = init_cosmosdb_conservation_client()
     if not cosmos_conversation_client:
         raise Exception("CosmosDB is not configured or not working")
 
@@ -1218,7 +1254,7 @@ async def get_conversation():
         return jsonify({"error": "conversation_id is required"}), 400
 
     # make sure cosmos is configured
-    cosmos_conversation_client = init_cosmosdb_client()
+    cosmos_conversation_client = init_cosmosdb_conservation_client()
     if not cosmos_conversation_client:
         raise Exception("CosmosDB is not configured or not working")
 
@@ -1274,7 +1310,7 @@ async def rename_conversation():
         return jsonify({"error": "conversation_id is required"}), 400
 
     # make sure cosmos is configured
-    cosmos_conversation_client = init_cosmosdb_client()
+    cosmos_conversation_client = init_cosmosdb_conservation_client()
     if not cosmos_conversation_client:
         raise Exception("CosmosDB is not configured or not working")
 
@@ -1316,7 +1352,7 @@ async def delete_all_conversations():
     # get conversations for user
     try:
         # make sure cosmos is configured
-        cosmos_conversation_client = init_cosmosdb_client()
+        cosmos_conversation_client = init_cosmosdb_conservation_client()
         if not cosmos_conversation_client:
             raise Exception("CosmosDB is not configured or not working")
 
@@ -1370,7 +1406,7 @@ async def clear_messages():
             return jsonify({"error": "conversation_id is required"}), 400
 
         # make sure cosmos is configured
-        cosmos_conversation_client = init_cosmosdb_client()
+        cosmos_conversation_client = init_cosmosdb_conservation_client()
         if not cosmos_conversation_client:
             raise Exception("CosmosDB is not configured or not working")
 
@@ -1399,7 +1435,7 @@ async def ensure_cosmos():
         return jsonify({"error": "CosmosDB is not configured"}), 404
 
     try:
-        cosmos_conversation_client = init_cosmosdb_client()
+        cosmos_conversation_client = init_cosmosdb_conservation_client()
         success, err = await cosmos_conversation_client.ensure()
         if not cosmos_conversation_client or not success:
             if err:
@@ -1454,12 +1490,56 @@ async def auth_callback_google():
     email = decoded["email"]
     name = decoded["name"]
     email_verified = decoded["email_verified"]
-    picture = decoded["picture"]
     sub = decoded["sub"]
+    picture_url = decoded["picture"]
+    family_name = decoded["family_name"]
+    given_name = decoded["given_name"]
+
+    if 'X-Forwarded-For' in request.headers:
+        proxy_data = request.headers['X-Forwarded-For']
+        ip_list = proxy_data.split(',')
+        user_ip = ip_list[0]  # first address in list is User IP
+    else:
+        user_ip = request.remote_addr
+
     logging.debug(
-        f"email: {email}, name: {name}, email_verified: {email_verified}, picture: {picture}, sub: {sub}")
+        f"""email: {email},
+        name: {name},
+        email_verified: {email_verified}, sub: {sub},
+        picture_url: {picture_url}, family_name: {family_name},
+        given_name: {given_name}, user_ip: {user_ip}""")
 
     login_user(AuthUser(sub))
+
+    try:
+        # make sure cosmos is configured
+        cosmos_sign_up_client = init_cosmosdb_sign_up_client()
+        if not cosmos_sign_up_client:
+            raise Exception("CosmosDB is not configured or not working")
+
+        createdSignUpValue = await cosmos_sign_up_client.create_sign_up(
+            email=email,
+            name=name,
+            email_verified=email_verified,
+            user_id=sub,
+            picture_url=picture_url,
+            family_name=family_name,
+            given_name=given_name,
+            user_ip=user_ip,
+        )
+
+        logging.debug(f"createdSignUpValue: {createdSignUpValue}")
+
+        # if createdSignUpValue == "Conversation not found":
+        #     raise Exception(
+        #         "Conversation not found for the given conversation ID"
+        #     )
+
+        await cosmos_sign_up_client.cosmosdb_client.close()
+
+    except Exception as e:
+        logging.exception("Exception in /auth/callback/google")
+        return jsonify({"error": str(e)}), 500
 
     return redirect('/')
 
