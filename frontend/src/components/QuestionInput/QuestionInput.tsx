@@ -70,6 +70,7 @@ export const QuestionInput = ({
         onChange={onQuestionChange}
         onKeyDown={onEnterPress}
         autoFocus
+        name="question"
       />
       <Button
         className={styles.questionInputSendButtonContainer}

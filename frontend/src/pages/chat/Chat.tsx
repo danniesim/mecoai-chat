@@ -57,6 +57,7 @@ import { ChatHistoryPanel } from "../../components/ChatHistory/ChatHistoryPanel"
 import { Splash } from "../../components/Splash";
 import { AppStateContext } from "../../state/AppProvider";
 import { Home } from "../Home";
+import { CheckChatHistory } from "./CheckChatHistory";
 
 const enum messageStatus {
   NotRunning = "Not Running",
@@ -749,6 +750,7 @@ const Chat = () => {
         <Home />
       ) : (
         <Stack horizontal className={styles.chatRoot}>
+          <CheckChatHistory />
           <div className={styles.chatContainer}>
             {!messages || messages.length < 1 ? (
               <Stack className={styles.chatEmptyState}>
