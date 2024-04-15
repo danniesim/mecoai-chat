@@ -21,7 +21,6 @@ from quart import (
 from quart_auth import (
     AuthUser, current_user, login_required, login_user, logout_user, QuartAuth
 )
-from quart_cors import cors
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
@@ -76,7 +75,6 @@ def create_app():
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = os.environ.get(
         "QUART_SECRET_KEY") or secrets.token_urlsafe(16)
-    QuartAuth(cors(app, allow_origin="*"))
     return app
 
 
@@ -1439,9 +1437,7 @@ async def ensure_cosmos():
 
 @bp.route("/auth/callback/google", methods=["POST"])
 async def auth_callback_google():
-    # import jwt
     request_data = await request.get_data()
-    # request_data is a bytes object, so we need to convert it to a string
     request_dict = dict(urllib.parse.parse_qsl(request_data.decode("utf-8")))
     logging.debug(f"request_dict: {request_dict}")
     token = request_dict["credential"]

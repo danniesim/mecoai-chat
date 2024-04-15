@@ -82,6 +82,7 @@ const Chat = () => {
   const [clearingChat, setClearingChat] = useState<boolean>(false);
   const [hideErrorDialog, setHideErrorDialog] = useState(true);
   const [errorMsg, setErrorMsg] = useState<ErrorMessage | null>();
+  const [hasLoadedUser, setHasLoadedUser] = useState(false);
 
   const errorDialogContentProps = {
     title: errorMsg?.title,
@@ -744,260 +745,270 @@ const Chat = () => {
     );
   };
 
+  useEffect(() => {
+    if (user_id !== null) {
+      setHasLoadedUser(true);
+    }
+  }, [user_id]);
+
   return (
     <div className={styles.container} role="main">
-      {!user_id ? (
+      {hasLoadedUser && !user_id ? (
         <Home />
       ) : (
-        <Stack horizontal className={styles.chatRoot}>
-          <CheckChatHistory />
-          <div className={styles.chatContainer}>
-            {!messages || messages.length < 1 ? (
-              <Stack className={styles.chatEmptyState}>
-                <Splash headlineText={"Fire Away!"} />
-              </Stack>
-            ) : (
-              <div
-                className={styles.chatMessageStream}
-                style={{ marginBottom: isLoading ? "40px" : "0px" }}
-                role="log"
-              >
-                {messages.map((answer, index) => (
-                  <div key={answer.id}>
-                    {answer.role === "user" ? (
-                      <div className={styles.chatMessageUser} tabIndex={0}>
-                        <div className={styles.chatMessageUserMessage}>
-                          {answer.content}
+        user_id && (
+          <Stack horizontal className={styles.chatRoot}>
+            <CheckChatHistory />
+            <div className={styles.chatContainer}>
+              {!messages || messages.length < 1 ? (
+                <Stack className={styles.chatEmptyState}>
+                  <Splash headlineText={"Fire Away!"} />
+                </Stack>
+              ) : (
+                <div
+                  className={styles.chatMessageStream}
+                  style={{ marginBottom: isLoading ? "40px" : "0px" }}
+                  role="log"
+                >
+                  {messages.map((answer, index) => (
+                    <div key={answer.id}>
+                      {answer.role === "user" ? (
+                        <div className={styles.chatMessageUser} tabIndex={0}>
+                          <div className={styles.chatMessageUserMessage}>
+                            {answer.content}
+                          </div>
                         </div>
-                      </div>
-                    ) : answer.role === "assistant" ? (
+                      ) : answer.role === "assistant" ? (
+                        <div className={styles.chatMessageGpt}>
+                          <Answer
+                            answer={{
+                              answer: answer.content,
+                              citations: parseCitationFromMessage(
+                                messages[index - 1]
+                              ),
+                              message_id: answer.id,
+                              feedback: answer.feedback,
+                            }}
+                            onCitationClicked={(c) => onShowCitation(c)}
+                          />
+                        </div>
+                      ) : answer.role === ERROR ? (
+                        <div className={styles.chatMessageError}>
+                          <Stack
+                            horizontal
+                            className={styles.chatMessageErrorContent}
+                          >
+                            <ErrorCircleRegular
+                              className={styles.errorIcon}
+                              style={{ color: "rgba(182, 52, 67, 1)" }}
+                            />
+                            <span>Error</span>
+                          </Stack>
+                          <span className={styles.chatMessageErrorContent}>
+                            {answer.content}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                  {showLoadingMessage && (
+                    <>
                       <div className={styles.chatMessageGpt}>
                         <Answer
                           answer={{
-                            answer: answer.content,
-                            citations: parseCitationFromMessage(
-                              messages[index - 1]
-                            ),
-                            message_id: answer.id,
-                            feedback: answer.feedback,
+                            answer: "Generating answer...",
+                            citations: [],
                           }}
-                          onCitationClicked={(c) => onShowCitation(c)}
+                          onCitationClicked={() => null}
                         />
                       </div>
-                    ) : answer.role === ERROR ? (
-                      <div className={styles.chatMessageError}>
-                        <Stack
-                          horizontal
-                          className={styles.chatMessageErrorContent}
-                        >
-                          <ErrorCircleRegular
-                            className={styles.errorIcon}
-                            style={{ color: "rgba(182, 52, 67, 1)" }}
-                          />
-                          <span>Error</span>
-                        </Stack>
-                        <span className={styles.chatMessageErrorContent}>
-                          {answer.content}
-                        </span>
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-                {showLoadingMessage && (
-                  <>
-                    <div className={styles.chatMessageGpt}>
-                      <Answer
-                        answer={{
-                          answer: "Generating answer...",
-                          citations: [],
-                        }}
-                        onCitationClicked={() => null}
-                      />
-                    </div>
-                  </>
-                )}
-                <div ref={chatMessageStreamEnd} />
-              </div>
-            )}
-
-            <Stack horizontal className={styles.chatInput}>
-              {isLoading && (
-                <div className={styles.stopGeneratingContainer}>
-                  <Button
-                    aria-label="Stop generating"
-                    tabIndex={0}
-                    onClick={stopGenerating}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" || e.key === " "
-                        ? stopGenerating()
-                        : null
-                    }
-                    icon={<SquareRegular />}
-                    size="small"
-                  >
-                    Stop generating
-                  </Button>
+                    </>
+                  )}
+                  <div ref={chatMessageStreamEnd} />
                 </div>
               )}
-              <div>
-                {appStateContext?.state.isCosmosDBAvailable?.status !==
-                  CosmosDBStatus.NotConfigured && (
-                  <Button
-                    className={styles.newChatIcon}
-                    icon={<Add48Regular />}
-                    onClick={newChat}
-                    disabled={disabledButton()}
-                    aria-label="start a new chat button"
-                  />
-                )}
-                <Dialog>
-                  <DialogTrigger disableButtonEnhancement>
+
+              <Stack horizontal className={styles.chatInput}>
+                {isLoading && (
+                  <div className={styles.stopGeneratingContainer}>
                     <Button
-                      className={
-                        appStateContext?.state.isCosmosDBAvailable?.status !==
-                        CosmosDBStatus.NotConfigured
-                          ? styles.clearChatBroom
-                          : styles.clearChatBroomNoCosmos
+                      aria-label="Stop generating"
+                      tabIndex={0}
+                      onClick={stopGenerating}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" || e.key === " "
+                          ? stopGenerating()
+                          : null
                       }
-                      icon={<BroomRegular />}
+                      icon={<SquareRegular />}
+                      size="small"
+                    >
+                      Stop generating
+                    </Button>
+                  </div>
+                )}
+                <div>
+                  {appStateContext?.state.isCosmosDBAvailable?.status !==
+                    CosmosDBStatus.NotConfigured && (
+                    <Button
+                      className={styles.newChatIcon}
+                      icon={<Add48Regular />}
+                      onClick={newChat}
                       disabled={disabledButton()}
-                      aria-label="clear chat button"
+                      aria-label="start a new chat button"
                     />
-                  </DialogTrigger>
-                  <DialogSurface
-                    {...modalProps}
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      justifyContent: "end",
-                      flexFlow: "row wrap",
-                      gap: "8px",
-                    }}
-                  >
-                    <DialogTitle
+                  )}
+                  <Dialog>
+                    <DialogTrigger disableButtonEnhancement>
+                      <Button
+                        className={
+                          appStateContext?.state.isCosmosDBAvailable?.status !==
+                          CosmosDBStatus.NotConfigured
+                            ? styles.clearChatBroom
+                            : styles.clearChatBroomNoCosmos
+                        }
+                        icon={<BroomRegular />}
+                        disabled={disabledButton()}
+                        aria-label="clear chat button"
+                      />
+                    </DialogTrigger>
+                    <DialogSurface
+                      {...modalProps}
                       style={{
-                        flex: "1 0 100%",
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "end",
+                        flexFlow: "row wrap",
+                        gap: "8px",
                       }}
                     >
-                      Are you sure you want clear this chat?
-                    </DialogTitle>
-                    <DialogContent>
-                      <DialogBody>
-                        <Text>
-                          The contents of this chat session will permanently
-                          cleared.
-                        </Text>
-                      </DialogBody>
-                    </DialogContent>
-                    <DialogFooter>
+                      <DialogTitle
+                        style={{
+                          flex: "1 0 100%",
+                        }}
+                      >
+                        Are you sure you want clear this chat?
+                      </DialogTitle>
+                      <DialogContent>
+                        <DialogBody>
+                          <Text>
+                            The contents of this chat session will permanently
+                            cleared.
+                          </Text>
+                        </DialogBody>
+                      </DialogContent>
+                      <DialogFooter>
+                        <DialogTrigger disableButtonEnhancement>
+                          <Button
+                            icon={<DeleteIcon />}
+                            onClick={
+                              appStateContext?.state.isCosmosDBAvailable
+                                ?.status !== CosmosDBStatus.NotConfigured
+                                ? clearChat
+                                : newChat
+                            }
+                          >
+                            Clear Chat
+                          </Button>
+                        </DialogTrigger>
+                        <DialogTrigger disableButtonEnhancement>
+                          <Button icon={<ExitIcon />}>Cancel</Button>
+                        </DialogTrigger>
+                      </DialogFooter>
+                    </DialogSurface>
+                  </Dialog>
+                  <Dialog modalType="alert" open={!hideErrorDialog}>
+                    <DialogSurface {...modalProps}>
+                      <DialogTitle>{errorDialogContentProps.title}</DialogTitle>
+                      <DialogContent>
+                        <DialogBody>
+                          {errorDialogContentProps.subText}
+                        </DialogBody>
+                      </DialogContent>
                       <DialogTrigger disableButtonEnhancement>
-                        <Button
-                          icon={<DeleteIcon />}
-                          onClick={
-                            appStateContext?.state.isCosmosDBAvailable
-                              ?.status !== CosmosDBStatus.NotConfigured
-                              ? clearChat
-                              : newChat
-                          }
-                        >
-                          Clear Chat
-                        </Button>
+                        <Button onClick={handleErrorDialogClose}>Close</Button>
                       </DialogTrigger>
-                      <DialogTrigger disableButtonEnhancement>
-                        <Button icon={<ExitIcon />}>Cancel</Button>
-                      </DialogTrigger>
-                    </DialogFooter>
-                  </DialogSurface>
-                </Dialog>
-                <Dialog modalType="alert" open={!hideErrorDialog}>
-                  <DialogSurface {...modalProps}>
-                    <DialogTitle>{errorDialogContentProps.title}</DialogTitle>
-                    <DialogContent>
-                      <DialogBody>{errorDialogContentProps.subText}</DialogBody>
-                    </DialogContent>
-                    <DialogTrigger disableButtonEnhancement>
-                      <Button onClick={handleErrorDialogClose}>Close</Button>
-                    </DialogTrigger>
-                  </DialogSurface>
-                </Dialog>
-              </div>
-              <QuestionInput
-                clearOnSend
-                placeholder="Type a new question..."
-                disabled={isLoading}
-                onSend={(question, id) => {
-                  appStateContext?.state.isCosmosDBAvailable?.cosmosDB
-                    ? makeApiRequestWithCosmosDB(question, id)
-                    : makeApiRequestWithoutCosmosDB(question, id);
-                }}
-                conversationId={
-                  appStateContext?.state.currentChat?.id
-                    ? appStateContext?.state.currentChat?.id
-                    : undefined
-                }
-              />
-            </Stack>
-          </div>
-          {/* Citation Panel */}
-          {messages &&
-            messages.length > 0 &&
-            isCitationPanelOpen &&
-            activeCitation && (
-              <Stack.Item
-                className={styles.citationPanel}
-                tabIndex={0}
-                role="tabpanel"
-                aria-label="Citations Panel"
-              >
-                <Stack
-                  aria-label="Citations Panel Header Container"
-                  horizontal
-                  className={styles.citationPanelHeaderContainer}
-                  horizontalAlign="space-between"
-                  verticalAlign="center"
-                >
-                  <span
-                    aria-label="Citations"
-                    className={styles.citationPanelHeader}
-                  >
-                    Citations
-                  </span>
-                  <Button
-                    icon={<StopRegular />}
-                    aria-label="Close citations panel"
-                    onClick={() => setIsCitationPanelOpen(false)}
-                  />
-                </Stack>
-                <h5
-                  className={styles.citationPanelTitle}
-                  tabIndex={0}
-                  title={
-                    activeCitation.url &&
-                    !activeCitation.url.includes("blob.core")
-                      ? activeCitation.url
-                      : activeCitation.title ?? ""
-                  }
-                  onClick={() => onViewSource(activeCitation)}
-                >
-                  {activeCitation.title}
-                </h5>
-                <div tabIndex={0}>
-                  <ReactMarkdown
-                    linkTarget="_blank"
-                    className={styles.citationPanelContent}
-                    children={DOMPurify.sanitize(activeCitation.content, {
-                      ALLOWED_TAGS: XSSAllowTags,
-                    })}
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                  />
+                    </DialogSurface>
+                  </Dialog>
                 </div>
-              </Stack.Item>
-            )}
-          {appStateContext?.state.isChatHistoryOpen &&
-            appStateContext?.state.isCosmosDBAvailable?.status !==
-              CosmosDBStatus.NotConfigured && <ChatHistoryPanel />}
-        </Stack>
+                <QuestionInput
+                  clearOnSend
+                  placeholder="Type a new question..."
+                  disabled={isLoading}
+                  onSend={(question, id) => {
+                    appStateContext?.state.isCosmosDBAvailable?.cosmosDB
+                      ? makeApiRequestWithCosmosDB(question, id)
+                      : makeApiRequestWithoutCosmosDB(question, id);
+                  }}
+                  conversationId={
+                    appStateContext?.state.currentChat?.id
+                      ? appStateContext?.state.currentChat?.id
+                      : undefined
+                  }
+                />
+              </Stack>
+            </div>
+            {/* Citation Panel */}
+            {messages &&
+              messages.length > 0 &&
+              isCitationPanelOpen &&
+              activeCitation && (
+                <Stack.Item
+                  className={styles.citationPanel}
+                  tabIndex={0}
+                  role="tabpanel"
+                  aria-label="Citations Panel"
+                >
+                  <Stack
+                    aria-label="Citations Panel Header Container"
+                    horizontal
+                    className={styles.citationPanelHeaderContainer}
+                    horizontalAlign="space-between"
+                    verticalAlign="center"
+                  >
+                    <span
+                      aria-label="Citations"
+                      className={styles.citationPanelHeader}
+                    >
+                      Citations
+                    </span>
+                    <Button
+                      icon={<StopRegular />}
+                      aria-label="Close citations panel"
+                      onClick={() => setIsCitationPanelOpen(false)}
+                    />
+                  </Stack>
+                  <h5
+                    className={styles.citationPanelTitle}
+                    tabIndex={0}
+                    title={
+                      activeCitation.url &&
+                      !activeCitation.url.includes("blob.core")
+                        ? activeCitation.url
+                        : activeCitation.title ?? ""
+                    }
+                    onClick={() => onViewSource(activeCitation)}
+                  >
+                    {activeCitation.title}
+                  </h5>
+                  <div tabIndex={0}>
+                    <ReactMarkdown
+                      linkTarget="_blank"
+                      className={styles.citationPanelContent}
+                      children={DOMPurify.sanitize(activeCitation.content, {
+                        ALLOWED_TAGS: XSSAllowTags,
+                      })}
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    />
+                  </div>
+                </Stack.Item>
+              )}
+            {appStateContext?.state.isChatHistoryOpen &&
+              appStateContext?.state.isCosmosDBAvailable?.status !==
+                CosmosDBStatus.NotConfigured && <ChatHistoryPanel />}
+          </Stack>
+        )
       )}
     </div>
   );
