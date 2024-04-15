@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { AppStateContext } from "../state/AppProvider";
 
-interface SignInProps {
-  auth_client_id: string | null;
-}
+export const SignIn = () => {
+  const appStateContext = useContext(AppStateContext);
+  const auth_client_id =
+    appStateContext?.state.frontendSettings?.auth_client_id || null;
+  const user_id = appStateContext?.state.userId || null;
 
-export const SignIn = ({auth_client_id}: SignInProps) => {
   useEffect(() => {
     if (!auth_client_id) {
       return;
@@ -20,8 +22,7 @@ export const SignIn = ({auth_client_id}: SignInProps) => {
 
   return (
     <div>
-      {
-        auth_client_id && 
+      {auth_client_id && !user_id && (
         <div>
           <div
             id="g_id_onload"
@@ -42,7 +43,7 @@ export const SignIn = ({auth_client_id}: SignInProps) => {
             data-logo_alignment="left"
           ></div>
         </div>
-      }
+      )}
     </div>
   );
 };

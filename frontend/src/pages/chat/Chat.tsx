@@ -56,8 +56,6 @@ const enum messageStatus {
 
 const Chat = () => {
   const appStateContext = useContext(AppStateContext);
-  const AUTH_CLIENT_ID =
-    appStateContext?.state.frontendSettings?.auth_client_id || null;
   const user_id = appStateContext?.state.userId || null;
   const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -757,7 +755,7 @@ const Chat = () => {
               " - a large set of research notes curated while developing the Meco Rocket Simulator."
             }
           />
-          <SignIn auth_client_id={AUTH_CLIENT_ID} />
+          <SignIn />
           <br />
           <br />
         </div>
