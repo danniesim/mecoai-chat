@@ -5,6 +5,8 @@ export const SignIn = () => {
   const appStateContext = useContext(AppStateContext);
   const auth_client_id =
     appStateContext?.state.frontendSettings?.auth_client_id || null;
+  const auth_login_uri =
+    appStateContext?.state.frontendSettings?.auth_login_uri || null;
   const user_id = appStateContext?.state.userId || null;
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export const SignIn = () => {
             data-client_id={auth_client_id}
             data-context="signin"
             data-ux_mode="popup"
-            data-login_uri="/auth/callback/google"
+            data-login_uri={auth_login_uri}
             data-auto_select="true"
             data-itp_support="true"
           ></div>

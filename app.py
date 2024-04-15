@@ -21,6 +21,7 @@ from quart import (
 from quart_auth import (
     AuthUser, current_user, login_required, login_user, logout_user, QuartAuth
 )
+from quart_cors import cors
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
@@ -47,6 +48,7 @@ bp = Blueprint(
     template_folder="static")
 
 AUTH_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+AUTH_LOGIN_URI = os.environ.get("GOOGLE_LOGIN_URI")
 DEMO_USER = (os.environ.get("DEMO_USER") or "False").lower() == "true"
 
 # Current minimum Azure OpenAI version supported
@@ -74,7 +76,7 @@ def create_app():
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.secret_key = os.environ.get(
         "QUART_SECRET_KEY") or secrets.token_urlsafe(16)
-    QuartAuth(app)
+    QuartAuth(cors(app, allow_origin="*"))
     return app
 
 
@@ -286,6 +288,7 @@ SANITIZE_ANSWER = os.environ.get("SANITIZE_ANSWER", "false").lower() == "true"
 frontend_settings = {
     "auth_enabled": AUTH_ENABLED,
     "auth_client_id": AUTH_CLIENT_ID,
+    "auth_login_uri": AUTH_LOGIN_URI,
     "feedback_enabled": AZURE_COSMOSDB_ENABLE_FEEDBACK and CHAT_HISTORY_ENABLED,
     "ui": {
         "title": UI_TITLE,
