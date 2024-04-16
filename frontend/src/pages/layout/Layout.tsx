@@ -1,4 +1,5 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import styles from "./Layout.module.css";
 import MecoAI from "../../assets/mecoai.svg";
 import {
@@ -105,95 +106,120 @@ const Layout = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const ogImage =
+    "https://chat.mecorocketscientist.com/public/mecoai-breaking-moon-landing.png";
+
+  const ogDescription =
+    "MecoAI draws upon the Mecoteca a corpus on the scientific study and engineering of rocket systems and spacecraft. It covers aspects of chemistry, math, thermodynamics, aerodynamics, material science, electronics, failure analysis, machining, metalworking, model building, composite techniques, experimental methods, natural forces, laws of motion, and technical problems related to the development and experimentation of rockets, including stories and lessons from spaceflight history.";
+
+  const ogTitle = "MecoAI - Your Rocket Scientist Buddy";
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      <header className={styles.header} role={"banner"}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            verticalAlign: "center",
-          }}
-        >
+    <>
+      <Helmet>
+        <title>{ogTitle}</title>
+        <meta name="description" content={ogDescription} />
+        // Open Graph Tags
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        // Twitter Card Tags
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+      </Helmet>
+      <div
+        style={{ display: "flex", flexDirection: "column", height: "100vh" }}
+      >
+        <header className={styles.header} role={"banner"}>
           <div
             style={{
               display: "flex",
               flexDirection: "row",
               verticalAlign: "center",
-              justifyContent: "start",
-              margin: "4px",
             }}
           >
-            <Link to="/" className={styles.headerTitleContainer}>
-              <img
-                src={ui?.logo ? ui.logo : MecoAI}
-                className={styles.headerIcon}
-                aria-hidden="true"
-              />
-              <h1 className={styles.headerTitle}>{ui?.title}</h1>
-            </Link>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexGrow: 1,
-              flexDirection: "row",
-              verticalAlign: "center",
-              justifyContent: "end",
-              margin: "4px",
-              gap: "8px",
-            }}
-          >
-            {appStateContext?.state.isCosmosDBAvailable?.status ==
-              CosmosDBStatus.Working &&
-              userId && (
-                <HistoryButton
-                  onClick={handleHistoryClick}
-                  text={
-                    appStateContext?.state?.isChatHistoryOpen
-                      ? hideHistoryLabel
-                      : showHistoryLabel
-                  }
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                verticalAlign: "center",
+                justifyContent: "start",
+                margin: "4px",
+              }}
+            >
+              <Link to="/" className={styles.headerTitleContainer}>
+                <img
+                  src={ui?.logo ? ui.logo : MecoAI}
+                  className={styles.headerIcon}
+                  aria-hidden="true"
                 />
-              )}
-            {ui?.show_share_button && (
-              <Dialog>
-                <DialogTrigger>
-                  <ShareButton onClick={() => {}} text={shareLabel} />
-                </DialogTrigger>
-                <DialogSurface
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <DialogTitle>Share</DialogTitle>
-                  <DialogContent
+                <h1 className={styles.headerTitle}>{ui?.title}</h1>
+              </Link>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexGrow: 1,
+                flexDirection: "row",
+                verticalAlign: "center",
+                justifyContent: "end",
+                margin: "4px",
+                gap: "8px",
+              }}
+            >
+              {appStateContext?.state.isCosmosDBAvailable?.status ==
+                CosmosDBStatus.Working &&
+                userId && (
+                  <HistoryButton
+                    onClick={handleHistoryClick}
+                    text={
+                      appStateContext?.state?.isChatHistoryOpen
+                        ? hideHistoryLabel
+                        : showHistoryLabel
+                    }
+                  />
+                )}
+              {ui?.show_share_button && (
+                <Dialog>
+                  <DialogTrigger>
+                    <ShareButton onClick={() => {}} text={shareLabel} />
+                  </DialogTrigger>
+                  <DialogSurface
                     style={{
                       display: "flex",
-                      flexDirection: "row",
+                      flexDirection: "column",
                       gap: "8px",
                     }}
                   >
-                    <Input
-                      defaultValue={window.location.href}
-                      readOnly
-                      style={{ flexGrow: 2 }}
-                    />
-                    <Button onClick={handleCopyClick}>{copyText}</Button>
-                  </DialogContent>
-                </DialogSurface>
-              </Dialog>
-            )}
-            {userId != null && (
-              <SignOutButton onClick={handleSignOutClick} text={"Sign out"} />
-            )}
+                    <DialogTitle>Share</DialogTitle>
+                    <DialogContent
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: "8px",
+                      }}
+                    >
+                      <Input
+                        defaultValue={window.location.href}
+                        readOnly
+                        style={{ flexGrow: 2 }}
+                      />
+                      <Button onClick={handleCopyClick}>{copyText}</Button>
+                    </DialogContent>
+                  </DialogSurface>
+                </Dialog>
+              )}
+              {userId != null && (
+                <SignOutButton onClick={handleSignOutClick} text={"Sign out"} />
+              )}
+            </div>
           </div>
-        </div>
-      </header>
-      <Outlet />
-    </div>
+        </header>
+        <Outlet />
+      </div>
+    </>
   );
 };
 

@@ -2,8 +2,9 @@ import { useContext, useEffect } from "react";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { FluentProvider, teamsDarkTheme } from "@fluentui/react-components";
-import { AppInsightsContext } from '@microsoft/applicationinsights-react-js';
+import { AppInsightsContext } from "@microsoft/applicationinsights-react-js";
 import { telemetryService } from "./components/TelemetryService";
+import { HelmetProvider } from "react-helmet-async";
 
 import Layout from "./pages/layout/Layout";
 import NoPage from "./pages/NoPage";
@@ -17,7 +18,9 @@ export default function App() {
   const appStateContext = useContext(AppStateContext);
 
   useEffect(() => {
-    const instrumentationKey = appStateContext?.state.frontendSettings?.applicationinsights_connection_string;
+    const instrumentationKey =
+      appStateContext?.state.frontendSettings
+        ?.applicationinsights_connection_string;
     if (instrumentationKey) {
       // console.log("Initializing Telemetry Service with key: ", instrumentationKey);
       telemetryService.initialize(instrumentationKey);
@@ -25,8 +28,9 @@ export default function App() {
   }, [appStateContext]);
 
   return (
-    <AppInsightsContext.Provider value={telemetryService.reactPlugin}>
-      <FluentProvider theme={teamsDarkTheme}>
+    <HelmetProvider>
+      <AppInsightsContext.Provider value={telemetryService.reactPlugin}>
+        <FluentProvider theme={teamsDarkTheme}>
           <Router>
             <Routes>
               <Route path="/" element={<Layout />}>
@@ -37,7 +41,8 @@ export default function App() {
               </Route>
             </Routes>
           </Router>
-      </FluentProvider>
-    </AppInsightsContext.Provider>
+        </FluentProvider>
+      </AppInsightsContext.Provider>
+    </HelmetProvider>
   );
 }
