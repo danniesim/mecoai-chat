@@ -199,7 +199,8 @@ SHOULD_STREAM = True if AZURE_OPENAI_STREAM.lower() == "true" else False
 
 # Chat History CosmosDB Integration Settings
 AZURE_COSMOSDB_DATABASE = os.environ.get("AZURE_COSMOSDB_DATABASE")
-AZURE_COSMOSDB_SIGN_UP_DATABASE = os.environ.get("AZURE_COSMOSDB_SIGN_UP_DATABASE")
+AZURE_COSMOSDB_SIGN_UP_DATABASE = os.environ.get(
+    "AZURE_COSMOSDB_SIGN_UP_DATABASE")
 AZURE_COSMOSDB_ACCOUNT = os.environ.get("AZURE_COSMOSDB_ACCOUNT")
 AZURE_COSMOSDB_CONVERSATIONS_CONTAINER = os.environ.get(
     "AZURE_COSMOSDB_CONVERSATIONS_CONTAINER"
@@ -1487,13 +1488,13 @@ async def auth_callback_google():
         return jsonify({"error": "Error verifying token"}), 401
 
     logging.debug(f"Decoded token: {decoded}")
-    email = decoded["email"]
-    name = decoded["name"]
-    email_verified = decoded["email_verified"]
-    sub = decoded["sub"]
-    picture_url = decoded["picture"]
-    family_name = decoded["family_name"]
-    given_name = decoded["given_name"]
+    email = decoded.get("email", "")
+    name = decoded.get("name", "")
+    email_verified = decoded.get("email_verified", False)
+    sub = decoded.get("sub", "")
+    picture_url = decoded.get("picture", "")
+    family_name = decoded.get("family_name", "")
+    given_name = decoded.get("given_name", "")
 
     if 'X-Forwarded-For' in request.headers:
         proxy_data = request.headers['X-Forwarded-For']
@@ -1552,15 +1553,17 @@ async def auth_me():
         from backend.auth import sample_user
         raw_user_object = sample_user.sample_user
         return jsonify(raw_user_object), 200
-    elif current_user.is_authenticated:
-        return jsonify([{
-            "access_token": "",
-            "expires_on": "",
-            "id_token": "",
-            "provider_name": "",
-            "user_claims": [],
-            "user_id": current_user.auth_id,
-        }]), 200
+    else:
+        is_user_authenticated = await current_user.is_authenticated
+        if is_user_authenticated:
+            return jsonify([{
+                "access_token": "",
+                "expires_on": "",
+                "id_token": "",
+                "provider_name": "",
+                "user_claims": [],
+                "user_id": current_user.auth_id,
+            }]), 200
     return jsonify([]), 401
 
 
