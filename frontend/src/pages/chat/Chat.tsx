@@ -757,7 +757,17 @@ const Chat = () => {
             <div className={styles.chatContainer}>
               {!messages || messages.length < 1 ? (
                 <Stack className={styles.chatEmptyState}>
-                  <Splash headlineText={"Fire Away!"} />
+                  <Splash
+                    headlineText={"Fire Away!"}
+                    subText={
+                      "MecoAI draws upon the Mecoteca a corpus on the scientific study and engineering of rocket systems and spacecraft. " +
+                      "It covers aspects of chemistry, math, thermodynamics, " +
+                      "aerodynamics, material science, electronics, failure analysis, " +
+                      "machining, metalworking, model building, composite techniques, experimental methods, " +
+                      "natural forces, laws of motion, and technical problems related to " +
+                      "the development and experimentation of rockets, including stories and lessons from spaceflight history."
+                    }
+                  />
                 </Stack>
               ) : (
                 <div

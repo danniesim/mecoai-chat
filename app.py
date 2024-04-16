@@ -3,6 +3,7 @@ import secrets
 import json
 import os
 import logging
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 import urllib.parse
 import uuid
 from dotenv import load_dotenv
@@ -13,7 +14,6 @@ from quart import (
     jsonify,
     make_response,
     redirect,
-    render_template_string,
     request,
     send_from_directory,
     render_template,
@@ -40,11 +40,14 @@ from backend.utils import (
     format_pf_non_streaming_response,
 )
 
-bp = Blueprint(
-    "routes",
-    __name__,
-    static_folder="static",
-    template_folder="static")
+# Debug setting and logging
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+DEBUG = os.environ.get("DEBUG", "false")
+if DEBUG.lower() == "true":
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.addHandler(AzureLogHandler())
 
 AUTH_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 AUTH_LOGIN_URI = os.environ.get("GOOGLE_LOGIN_URI")
@@ -67,6 +70,13 @@ UI_FAVICON = os.environ.get("UI_FAVICON") or "/favicon.ico"
 UI_SHOW_SHARE_BUTTON = os.environ.get(
     "UI_SHOW_SHARE_BUTTON",
     "true").lower() == "true"
+
+
+bp = Blueprint(
+    "routes",
+    __name__,
+    static_folder="static",
+    template_folder="static")
 
 
 def create_app():
@@ -95,11 +105,6 @@ async def assets(path):
 
 
 load_dotenv()
-
-# Debug settings
-DEBUG = os.environ.get("DEBUG", "false")
-if DEBUG.lower() == "true":
-    logging.basicConfig(level=logging.DEBUG)
 
 USER_AGENT = "GitHubSampleWebApp/AsyncAzureOpenAI/1.0.0"
 
@@ -315,7 +320,7 @@ def should_use_data():
     global DATASOURCE_TYPE
     if AZURE_SEARCH_SERVICE and AZURE_SEARCH_INDEX:
         DATASOURCE_TYPE = "AzureCognitiveSearch"
-        logging.debug("Using Azure Cognitive Search")
+        logger.debug("Using Azure Cognitive Search")
         return True
 
     if (
@@ -325,22 +330,22 @@ def should_use_data():
         and AZURE_COSMOSDB_MONGO_VCORE_CONNECTION_STRING
     ):
         DATASOURCE_TYPE = "AzureCosmosDB"
-        logging.debug("Using Azure CosmosDB Mongo vcore")
+        logger.debug("Using Azure CosmosDB Mongo vcore")
         return True
 
     if ELASTICSEARCH_ENDPOINT and ELASTICSEARCH_ENCODED_API_KEY and ELASTICSEARCH_INDEX:
         DATASOURCE_TYPE = "Elasticsearch"
-        logging.debug("Using Elasticsearch")
+        logger.debug("Using Elasticsearch")
         return True
 
     if PINECONE_ENVIRONMENT and PINECONE_API_KEY and PINECONE_INDEX_NAME:
         DATASOURCE_TYPE = "Pinecone"
-        logging.debug("Using Pinecone")
+        logger.debug("Using Pinecone")
         return True
 
     if AZURE_MLINDEX_NAME and AZURE_MLINDEX_VERSION and AZURE_ML_PROJECT_RESOURCE_ID:
         DATASOURCE_TYPE = "AzureMLIndex"
-        logging.debug("Using Azure ML Index")
+        logger.debug("Using Azure ML Index")
         return True
 
     return False
@@ -378,7 +383,7 @@ def init_openai_client(use_data=SHOULD_USE_DATA):
         aoai_api_key = AZURE_OPENAI_KEY
         ad_token_provider = None
         if not aoai_api_key:
-            logging.debug("No AZURE_OPENAI_KEY found, using Azure AD auth")
+            logger.debug("No AZURE_OPENAI_KEY found, using Azure AD auth")
             ad_token_provider = get_bearer_token_provider(
                 DefaultAzureCredential(),
                 "https://cognitiveservices.azure.com/.default")
@@ -401,7 +406,7 @@ def init_openai_client(use_data=SHOULD_USE_DATA):
 
         return azure_openai_client
     except Exception as e:
-        logging.exception("Exception in Azure OpenAI initialization", e)
+        logger.exception("Exception in Azure OpenAI initialization", e)
         azure_openai_client = None
         raise e
 
@@ -428,11 +433,11 @@ def init_cosmosdb_conservation_client(
                 enable_message_feedback=AZURE_COSMOSDB_ENABLE_FEEDBACK,
             )
         except Exception as e:
-            logging.exception("Exception in CosmosDB initialization", e)
+            logger.exception("Exception in CosmosDB initialization", e)
             cosmos_conversation_client = None
             raise e
     else:
-        logging.debug("CosmosDB not configured")
+        logger.debug("CosmosDB not configured")
 
     return cosmos_conversation_client
 
@@ -459,11 +464,11 @@ def init_cosmosdb_sign_up_client(
                 enable_message_feedback=AZURE_COSMOSDB_ENABLE_FEEDBACK,
             )
         except Exception as e:
-            logging.exception("Exception in CosmosDB initialization", e)
+            logger.exception("Exception in CosmosDB initialization", e)
             cosmos_sign_up_client = None
             raise e
     else:
-        logging.debug("CosmosDB not configured")
+        logger.debug("CosmosDB not configured")
 
     return cosmos_sign_up_client
 
@@ -486,7 +491,7 @@ def get_configured_data_source():
         userToken = None
         if AZURE_SEARCH_PERMITTED_GROUPS_COLUMN:
             userToken = request.headers.get("X-MS-TOKEN-AAD-ACCESS-TOKEN", "")
-            logging.debug(
+            logger.debug(
                 f"USER TOKEN is {'present' if userToken else 'not present'}")
             if not userToken:
                 raise Exception(
@@ -494,7 +499,7 @@ def get_configured_data_source():
                 )
 
             filter = generateFilterString(userToken)
-            logging.debug(f"FILTER: {filter}")
+            logger.debug(f"FILTER: {filter}")
 
         # Set authentication
         authentication = {}
@@ -863,7 +868,7 @@ def prepare_model_args(request_body):
                         "parameters"]["embedding_dependency"][
                         "authentication"][field] = "*****"
 
-    logging.debug(f"REQUEST BODY: {json.dumps(model_args_clean, indent=4)}")
+    logger.debug(f"REQUEST BODY: {json.dumps(model_args_clean, indent=4)}")
 
     return model_args
 
@@ -875,7 +880,7 @@ async def promptflow_request(request):
             "Authorization": f"Bearer {PROMPTFLOW_API_KEY}",
         }
         # Adding timeout for scenarios where response takes longer to come back
-        logging.debug(f"Setting timeout to {PROMPTFLOW_RESPONSE_TIMEOUT}")
+        logger.debug(f"Setting timeout to {PROMPTFLOW_RESPONSE_TIMEOUT}")
         async with httpx.AsyncClient(
             timeout=float(PROMPTFLOW_RESPONSE_TIMEOUT)
         ) as client:
@@ -899,7 +904,7 @@ async def promptflow_request(request):
         resp["id"] = request["messages"][-1]["id"]
         return resp
     except Exception as e:
-        logging.error(
+        logger.error(
             f"An error occurred while making promptflow_request: {e}")
 
 
@@ -911,7 +916,7 @@ async def send_chat_request(request):
         response = await azure_openai_client.chat.completions.create(**model_args)
 
     except Exception as e:
-        logging.exception("Exception in send_chat_request")
+        logger.exception("Exception in send_chat_request")
         raise e
 
     return response
@@ -954,7 +959,7 @@ async def conversation_internal(request_body):
             return jsonify(result)
 
     except Exception as ex:
-        logging.exception(ex)
+        logger.exception(ex)
         if hasattr(ex, "status_code"):
             return jsonify({"error": str(ex)}), ex.status_code
         else:
@@ -998,7 +1003,7 @@ def get_frontend_settings():
     try:
         return jsonify(frontend_settings), 200
     except Exception as e:
-        logging.exception("Exception in /frontend_settings")
+        logger.exception("Exception in /frontend_settings")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1060,7 +1065,7 @@ async def add_conversation():
         return await conversation_internal(request_body)
 
     except Exception as e:
-        logging.exception("Exception in /history/generate")
+        logger.exception("Exception in /history/generate")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1114,7 +1119,7 @@ async def update_conversation():
         return jsonify(response), 200
 
     except Exception as e:
-        logging.exception("Exception in /history/update")
+        logger.exception("Exception in /history/update")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1162,7 +1167,7 @@ async def update_message():
             )
 
     except Exception as e:
-        logging.exception("Exception in /history/message_feedback")
+        logger.exception("Exception in /history/message_feedback")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1209,7 +1214,7 @@ async def delete_conversation():
             200,
         )
     except Exception as e:
-        logging.exception("Exception in /history/delete")
+        logger.exception("Exception in /history/delete")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1386,7 +1391,7 @@ async def delete_all_conversations():
         )
 
     except Exception as e:
-        logging.exception("Exception in /history/delete_all")
+        logger.exception("Exception in /history/delete_all")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1426,7 +1431,7 @@ async def clear_messages():
             200,
         )
     except Exception as e:
-        logging.exception("Exception in /history/clear_messages")
+        logger.exception("Exception in /history/clear_messages")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1447,7 +1452,7 @@ async def ensure_cosmos():
         await cosmos_conversation_client.cosmosdb_client.close()
         return jsonify({"message": "CosmosDB is configured and working"}), 200
     except Exception as e:
-        logging.exception("Exception in /history/ensure")
+        logger.exception("Exception in /history/ensure")
         cosmos_exception = str(e)
         if "Invalid credentials" in cosmos_exception:
             return jsonify({"error": cosmos_exception}), 401
@@ -1475,35 +1480,45 @@ async def ensure_cosmos():
 
 @bp.route("/auth/callback/google", methods=["POST"])
 async def auth_callback_google():
-    request_data = await request.get_data()
-    request_dict = dict(urllib.parse.parse_qsl(request_data.decode("utf-8")))
-    logging.debug(f"request_dict: {request_dict}")
-    token = request_dict["credential"]
+    try:
+        request_data = await request.get_data()
+        request_dict = dict(
+            urllib.parse.parse_qsl(
+                request_data.decode("utf-8")))
+        logger.debug(f"request_dict: {request_dict}")
+        token = request_dict["credential"]
+    except Exception as e:
+        logger.exception(f"/auth/callback/google: Error getting token")
+        return jsonify({"error": "Error getting token"}), 401
 
     try:
         decoded = id_token.verify_oauth2_token(
             token, requests.Request(), AUTH_CLIENT_ID)
     except Exception as e:
-        logging.error(f"Error verifying token: {e}")
+        logger.exception(f"/auth/callback/google: Error verifying token")
         return jsonify({"error": "Error verifying token"}), 401
 
-    logging.debug(f"Decoded token: {decoded}")
-    email = decoded.get("email", "")
-    name = decoded.get("name", "")
-    email_verified = decoded.get("email_verified", False)
-    sub = decoded.get("sub", "")
-    picture_url = decoded.get("picture", "")
-    family_name = decoded.get("family_name", "")
-    given_name = decoded.get("given_name", "")
+    try:
+        logger.debug(f"Decoded token: {decoded}")
+        email = decoded.get("email", "")
+        name = decoded.get("name", "")
+        email_verified = decoded.get("email_verified", False)
+        sub = decoded.get("sub", "")
+        picture_url = decoded.get("picture", "")
+        family_name = decoded.get("family_name", "")
+        given_name = decoded.get("given_name", "")
 
-    if 'X-Forwarded-For' in request.headers:
-        proxy_data = request.headers['X-Forwarded-For']
-        ip_list = proxy_data.split(',')
-        user_ip = ip_list[0]  # first address in list is User IP
-    else:
-        user_ip = request.remote_addr
+        if 'X-Forwarded-For' in request.headers:
+            proxy_data = request.headers['X-Forwarded-For']
+            ip_list = proxy_data.split(',')
+            user_ip = ip_list[0]  # first address in list is User IP
+        else:
+            user_ip = request.remote_addr
+    except Exception as e:
+        logger.exception(f"/auth/callback/google: Error getting user info")
+        return jsonify({"error": "Error getting user info"}), 401
 
-    logging.debug(
+    logger.debug(
         f"""email: {email},
         name: {name},
         email_verified: {email_verified}, sub: {sub},
@@ -1529,7 +1544,7 @@ async def auth_callback_google():
             user_ip=user_ip,
         )
 
-        logging.debug(f"createdSignUpValue: {createdSignUpValue}")
+        logger.debug(f"createdSignUpValue: {createdSignUpValue}")
 
         # if createdSignUpValue == "Conversation not found":
         #     raise Exception(
@@ -1539,7 +1554,7 @@ async def auth_callback_google():
         await cosmos_sign_up_client.cosmosdb_client.close()
 
     except Exception as e:
-        logging.exception("Exception in /auth/callback/google")
+        logger.exception("auth/callback/google: Error creating sign up")
         return jsonify({"error": str(e)}), 500
 
     return redirect('/')
@@ -1567,36 +1582,10 @@ async def auth_me():
     return jsonify([]), 401
 
 
-app = create_app()
-
-
-@app.route("/auth/logout")
+@bp.route("/auth/logout")
 async def logout():
     logout_user()
     return redirect('/')
 
 
-@app.route("/auth")
-@login_required
-async def restricted_route():
-    # Will be 2 given the login_user code above
-    logging.debug(current_user.auth_id)
-    return (jsonify([{
-        "access_token": "",
-        "expires_on": "",
-        "id_token": "",
-        "provider_name": "",
-        "user_claims": [],
-        "user_id": current_user.auth_id,
-    }]))
-
-
-@app.route("/auth/hello")
-async def hello():
-    return await render_template_string("""
-    {% if current_user.is_authenticated %}
-      Hello logged in user
-    {% else %}
-      Hello logged out user
-    {% endif %}
-    """)
+app = create_app()
