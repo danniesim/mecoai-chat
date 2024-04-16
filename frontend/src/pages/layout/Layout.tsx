@@ -1,5 +1,4 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import styles from "./Layout.module.css";
 import MecoAI from "../../assets/mecoai.svg";
 import {
@@ -10,7 +9,6 @@ import {
   DialogContent,
   Input,
   Button,
-  tokens,
 } from "@fluentui/react-components";
 import { useContext, useEffect, useState } from "react";
 import {
@@ -43,8 +41,8 @@ const Layout = () => {
     }
     const userInfoList = await getUserInfo();
     appStateContext?.dispatch({ type: "SET_USER_LOADED", payload: true });
-    if (userInfoList.length === 0 && window.location.hostname !== "127.0.0.1") {
-      appStateContext?.dispatch({ type: "SET_USER_ID", payload: "anonymous" });
+    if (userInfoList.length === 0) {
+      appStateContext?.dispatch({ type: "SET_USER_ID", payload: null });
     } else {
       appStateContext?.dispatch({
         type: "SET_USER_ID",
@@ -116,19 +114,6 @@ const Layout = () => {
 
   return (
     <>
-      <Helmet>
-        <title>{ogTitle}</title>
-        <meta name="description" content={ogDescription} />
-        // Open Graph Tags
-        <meta property="og:title" content={ogTitle} />
-        <meta property="og:description" content={ogDescription} />
-        <meta property="og:image" content={ogImage} />
-        // Twitter Card Tags
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={ogTitle} />
-        <meta name="twitter:description" content={ogDescription} />
-        <meta name="twitter:image" content={ogImage} />
-      </Helmet>
       <div
         style={{ display: "flex", flexDirection: "column", height: "100vh" }}
       >

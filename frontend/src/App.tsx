@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { FluentProvider, teamsDarkTheme } from "@fluentui/react-components";
 import { AppInsightsContext } from "@microsoft/applicationinsights-react-js";
 import { telemetryService } from "./components/TelemetryService";
-import { HelmetProvider } from "react-helmet-async";
 
 import Layout from "./pages/layout/Layout";
 import NoPage from "./pages/NoPage";
@@ -28,21 +27,19 @@ export default function App() {
   }, [appStateContext]);
 
   return (
-    <HelmetProvider>
-      <AppInsightsContext.Provider value={telemetryService.reactPlugin}>
-        <FluentProvider theme={teamsDarkTheme}>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Chat />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="*" element={<NoPage />} />
-              </Route>
-            </Routes>
-          </Router>
-        </FluentProvider>
-      </AppInsightsContext.Provider>
-    </HelmetProvider>
+    <AppInsightsContext.Provider value={telemetryService.reactPlugin}>
+      <FluentProvider theme={teamsDarkTheme}>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Chat />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="*" element={<NoPage />} />
+            </Route>
+          </Routes>
+        </Router>
+      </FluentProvider>
+    </AppInsightsContext.Provider>
   );
 }

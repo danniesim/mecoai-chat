@@ -89,6 +89,8 @@ def create_app():
     return app
 
 
+@bp.route("/terms")
+@bp.route("/privacy")
 @bp.route("/")
 async def index():
     return await render_template("index.html")

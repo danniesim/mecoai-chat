@@ -59,7 +59,7 @@ export default defineConfig(({ command }) => {
     };
   } else {
     const ogImage =
-      "https://chat.mecorocketscientist.com/public/mecoai-breaking-moon-landing.png";
+      "https://chat.mecorocketscientist.com/static/mecoai-breaking-moon-landing.png";
 
     const ogDescription =
       "MecoAI draws upon the Mecoteca a corpus on the scientific study and engineering of rocket systems and spacecraft. It covers aspects of chemistry, math, thermodynamics, aerodynamics, material science, electronics, failure analysis, machining, metalworking, model building, composite techniques, experimental methods, natural forces, laws of motion, and technical problems related to the development and experimentation of rockets, including stories and lessons from spaceflight history.";

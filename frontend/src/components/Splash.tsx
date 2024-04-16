@@ -2,8 +2,9 @@ import * as React from "react";
 
 import {
   makeStyles,
+  shorthands,
   Image,
-  Display,
+  LargeTitle,
   Subtitle2,
   Button,
 } from "@fluentui/react-components";
@@ -13,12 +14,14 @@ import { Link } from "react-router-dom";
 
 const useStyles = makeStyles({
   splash: {
-    width: "480px",
+    maxWidth: "480px",
+    width: "90%",
     textAlign: "center",
     flexDirection: "column",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    ...shorthands.gap("16px"),
   },
   centerpiece: { width: "96px" },
 });
@@ -41,7 +44,7 @@ export const Splash = ({
         className={classes.centerpiece}
         src={ui?.chat_logo ? ui.chat_logo : MecoAI}
       ></Image>
-      {headlineText && <Display>{headlineText}</Display>}
+      {headlineText && <LargeTitle>{headlineText}</LargeTitle>}
       {subText && <Subtitle2>{subText}</Subtitle2>}
       {/* Flexbox row orientation items centered and evenly spaced */}
       <div
