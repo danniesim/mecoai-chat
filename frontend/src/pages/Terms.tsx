@@ -3,8 +3,10 @@ import {
   DialogSurface,
   DialogTitle,
   DialogContent,
+  DialogActions,
   Button,
   Dialog,
+  tokens,
 } from "@fluentui/react-components";
 import { Link } from "react-router-dom";
 
@@ -18,9 +20,21 @@ const Terms = () => {
         }
       }}
     >
-      <DialogSurface style={{ overflow: "auto" }}>
+      <DialogSurface
+        style={{
+          overflow: "auto",
+          gap: "24px",
+          display: "flex",
+          flexFlow: "column",
+        }}
+      >
         <DialogTitle>Terms of Use</DialogTitle>
-        <DialogContent>
+        <DialogContent
+          style={{
+            maxHeight: "67vh",
+            background: tokens.colorNeutralBackground3,
+          }}
+        >
           <p>
             By accessing the website at mecorocketscientist.com, you are
             agreeing to be bound by these terms of service, all applicable laws
@@ -126,13 +140,11 @@ const Terms = () => {
             the exclusive jurisdiction of the courts in that State or location.
           </p>
         </DialogContent>
-        <div
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
-        >
+        <DialogActions style={{ display: "flex", justifyContent: "center" }}>
           <Link to="/">
             <Button>Back to chat</Button>
           </Link>
-        </div>
+        </DialogActions>
       </DialogSurface>
     </Dialog>
   );

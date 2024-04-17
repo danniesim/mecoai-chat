@@ -4,7 +4,9 @@ import {
   DialogSurface,
   DialogTitle,
   DialogContent,
+  DialogActions,
   Button,
+  tokens,
 } from "@fluentui/react-components";
 import { Link } from "react-router-dom";
 
@@ -18,9 +20,21 @@ const Privacy = () => {
         }
       }}
     >
-      <DialogSurface style={{ overflowY: "auto" }}>
+      <DialogSurface
+        style={{
+          overflow: "auto",
+          gap: "24px",
+          display: "flex",
+          flexFlow: "column",
+        }}
+      >
         <DialogTitle>Privacy Policy</DialogTitle>
-        <DialogContent>
+        <DialogContent
+          style={{
+            maxHeight: "67vh",
+            background: tokens.colorNeutralBackground3,
+          }}
+        >
           <p>
             Your privacy is important to us. It is MecoAI's policy to respect
             your privacy regarding any information we may collect from you
@@ -64,12 +78,13 @@ const Privacy = () => {
           <p>This policy is effective as of 8 April 2024.</p>
           <div
             style={{ display: "flex", justifyContent: "center", width: "100%" }}
-          >
-            <Link to="/">
-              <Button>Go to chat</Button>
-            </Link>
-          </div>
+          ></div>
         </DialogContent>
+        <DialogActions style={{ display: "flex", justifyContent: "center" }}>
+          <Link to="/">
+            <Button>Go to chat</Button>
+          </Link>
+        </DialogActions>
       </DialogSurface>
     </Dialog>
   );
