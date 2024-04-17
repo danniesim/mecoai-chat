@@ -98,9 +98,10 @@ export const Home = () => {
               minWidth: "150px",
             }}
           >
-            MecoAI is a trading name of Loren Aerospace Limited, a company
-            registered in England and Wales (No. 14563299) at 86-90 Paul Street,
-            London, EC2A 4NE, UK.
+            MecoAI is a trading name of{" "}
+            <span style={{ whiteSpace: "nowrap" }}>Loren Aerospace Ltd</span>, a
+            company registered in England and Wales (No. 14563299) at 86-90 Paul
+            Street, London, EC2A 4NE, UK.
           </div>
         </div>
       </div>
