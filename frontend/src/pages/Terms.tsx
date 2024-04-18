@@ -28,7 +28,7 @@ const Terms = () => {
           flexFlow: "column",
         }}
       >
-        <DialogTitle>Terms of Use</DialogTitle>
+        <DialogTitle style={{ fontSize: "2em" }}>Terms of Use</DialogTitle>
         <DialogContent
           style={{
             maxHeight: "67vh",
