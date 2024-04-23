@@ -934,6 +934,7 @@ async def complete_chat_request(request_body):
     else:
         response = await send_chat_request(request_body)
         history_metadata = request_body.get("history_metadata", {})
+        response.close()
         return format_non_streaming_response(response, history_metadata)
 
 
@@ -944,6 +945,7 @@ async def stream_chat_request(request_body):
     async def generate():
         async for completionChunk in response:
             yield format_stream_response(completionChunk, history_metadata)
+        response.close()
 
     return generate()
 
@@ -985,6 +987,7 @@ async def generate_title(conversation_messages):
         )
 
         title = json.loads(response.choices[0].message.content)["title"]
+        azure_openai_client.close()
         return title
     except Exception as e:
         return messages[-2]["content"]
