@@ -921,7 +921,7 @@ async def send_chat_request(request):
         logger.exception("Exception in send_chat_request")
         raise e
 
-    return response
+    return response, azure_openai_client
 
 
 async def complete_chat_request(request_body):
@@ -932,20 +932,20 @@ async def complete_chat_request(request_body):
             response, history_metadata, PROMPTFLOW_RESPONSE_FIELD_NAME
         )
     else:
-        response = await send_chat_request(request_body)
+        response, client = await send_chat_request(request_body)
         history_metadata = request_body.get("history_metadata", {})
-        await response.close()
+        await client.close()
         return format_non_streaming_response(response, history_metadata)
 
 
 async def stream_chat_request(request_body):
-    response = await send_chat_request(request_body)
+    response, client = await send_chat_request(request_body)
     history_metadata = request_body.get("history_metadata", {})
 
     async def generate():
         async for completionChunk in response:
             yield format_stream_response(completionChunk, history_metadata)
-        await response.close()
+        await client.close()
 
     return generate()
 
@@ -1151,6 +1151,7 @@ async def update_message():
         updated_message = await cosmos_conversation_client.update_message_feedback(
             user_id, message_id, message_feedback
         )
+        await cosmos_conversation_client.cosmosdb_client.close()
         if updated_message:
             return (
                 jsonify(
@@ -1425,6 +1426,7 @@ async def clear_messages():
         deleted_messages = await cosmos_conversation_client.delete_messages(
             conversation_id, user_id
         )
+        await cosmos_conversation_client.cosmosdb_client.close()
 
         return (
             jsonify(
