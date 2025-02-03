@@ -1,15 +1,16 @@
-# [Preview] Sample Chat App with AOAI
+# MecoAI Chat App with AOAI
 
-This repo contains sample code for a simple chat webapp that integrates with Azure OpenAI. Note: some portions of the app use preview APIs.
+This repo contains code for a chat webapp - MecoAI is a simulated rocket scientist who answers your questions by referencing the Mecoteca
+- a large set of research notes curated while developing the Meco Rocket Simulator. It uses with Azure OpenAI and Azure AI Search and can be found at www.mecorocketscientist.com.
 
 ## Prerequisites
 - An existing Azure OpenAI resource and model deployment of a chat model (e.g. `gpt-35-turbo-16k`, `gpt-4`)
 - To use Azure OpenAI on your data: one of the following data sources:
   - Azure AI Search Index
-  - Azure CosmosDB Mongo vCore vector index
-  - Elasticsearch index (preview)
-  - Pinecone index (preview)
-  - AzureML index (preview)
+- Script to ingest the Mecoteca into Azure AI Search found [here](https://github.com/danniesim/loren_data/blob/main/azure_project/function_app.py).
+
+## Limitations
+- The citation for chunks used in a reply is a hexadecial string for a document follow by the page number (e.g. e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 - page 1) this does not help in finding the document in the Mecoteca as there is no index that maps that string to the document file.
 
 ## Deploy the app
 
